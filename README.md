@@ -6,6 +6,7 @@ Jump to a section:
   - [Build options and examples](#build-options-and-examples)
 - [Run a container](#run-a-container)
   - [Examples: Run Oracle Database containers](#run-options-and-examples)
+- [Build and run on Apple Silicon/ARM systems](#example-for-apple-silicon)
 - [Directory structure](#directory-structure)
   - [Where to put files](#file-placement)
 - [Why this Repo](#why-this-repo)
