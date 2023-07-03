@@ -1,0 +1,5 @@
+# Create a MOS credential file, ./config/.netrc
+# Update the login and password fields only
+machine login.oracle.com
+login mos_user@email.com
+password your_mos_password

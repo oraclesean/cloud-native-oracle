@@ -1,0 +1,8 @@
+${ALIAS} =
+  (DESCRIPTION =
+    (ADDRESS = (PROTOCOL = TCP)(HOST = ${CONTAINER_NAME=0.0.0.0})(PORT = 1521))
+    (CONNECT_DATA =
+      (SERVER = DEDICATED)
+      (SERVICE_NAME = ${ALIAS})
+    )
+  )

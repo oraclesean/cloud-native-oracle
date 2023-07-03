@@ -1,0 +1,25 @@
+# .bashrc
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
+
+export PS1="[\u - ${ORACLE_SID}] \w\n# "
+
+export ORACLE_BASE=/u01/app/oracle
+export ORACLE_SID=$(egrep -v "^$|^#" /etc/oratab | cut -d: -f1 | head -1)
+export ORACLE_UNQNAME=$ORACLE_SID
+export ORACLE_HOME=$(egrep "^${ORACLE_SID}:" /etc/oratab | egrep -v "^$|^#" | cut -d: -f2 | head -1)
+export ORACLE_BASE_CONFIG="$($ORACLE_HOME/bin/orabaseconfig 2>/dev/null || echo $ORACLE_HOME)"/dbs
+export ORACLE_BASE_HOME="$($ORACLE_HOME/bin/orabasehome 2>/dev/null || echo $ORACLE_HOME)"
+export TNS_ADMIN=$ORACLE_BASE_HOME/network/admin
+export BASEPATH=/usr/sbin:/usr/local/sbin:/usr/local/bin:/usr/bin:/sbin:/bin
+export PATH=$ORACLE_HOME/bin:$ORACLE_HOME/OPatch/:$BASEPATH
+export CLASSPATH=$ORACLE_HOME/jlib:$ORACLE_HOME/rdbms/jlib
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/usr/lib
+export ORACLE_PATH=$ORACLE_PATH
+export ORACLE_21C_HOME=$ORACLE_BASE/product/21c/dbhome_1
+
+alias sqlplus="rlwrap \$ORACLE_HOME/bin/sqlplus"
+alias rman="rlwrap \$ORACLE_HOME/bin/rman"
+alias dgmgrl="rlwrap \$ORACLE_HOME/bin/dgmgrl"

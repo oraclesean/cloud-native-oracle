@@ -1,0 +1,11 @@
+8ac915a800800ddf16a382506d3953db  LINUX.X64_213000_db_home.zip 			database	21		SE,EE
+#be49680760d60089815cc0b4ae2e1805  oracle-database-ee-21c-1.0-1.ol7.x86_64.rpm 	database 	21		SE,EE		OEL7
+#db3d15b21e17a455a1c28861d5ce0a4f  oracle-database-ee-21c-1.0-1.ol8.x86_64.rpm 	database	21		SE,EE		OEL8
+9a66f9ff5ccedf1a253820d2984a540b  p6880880_210000_Linux-x86-64.zip              opatch          21              6880880
+e52c22cdc2f6cb18f571569c9412b693  p33516412_210000_Linux-x86-64.zip		patch		21.5		33516412
+a4f3339727becb27a4033b84615ac214  p33843745_210000_Linux-x86-64.zip		patch		21.6		33843745
+70cb6d33ea30aff9302a5bf0ac1e5348  p34160444_210000_Linux-x86-64.zip		patch		21.7		34160444
+f9fd56bcb1f4faab2ebde54f193b7a63  p34527084_210000_Linux-x86-64.zip		patch		21.8		34527084
+# DATABASE PERL UPDATE FOR 21C TO V5.32-1 (CVE-2022-23990 - LIBEXPAT UPDATE)
+# General for any version, must be applied after RU
+1e3fdfd8dfea43b9d9f34d1202348b89  p33928944_210000_Linux-x86-64.zip             patch           21		33928944
