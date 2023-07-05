@@ -1,0 +1,7 @@
+*.sh eol=lf
+*.conf eol=lf
+*.rsp eol=lf
+manifest.* eol=lf linguist-language=text
+Dockerfile.* eol=lf
+Dockerfile.* linguist-detectable=true
+Dockerfile.* linguist-language=Dockerfile
