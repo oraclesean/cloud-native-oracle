@@ -47,7 +47,7 @@ ENV ORACLE_BASE=$ORACLE_BASE \
 # Copy DB install files
 COPY --chown=oracle:oinstall $MANAGE_ORACLE      $SCRIPTS_DIR/
 COPY --chown=oracle:oinstall ./config/inst.*     $INSTALL_DIR/
-COPY --chown=oracle:oinstall ./config/manifest.* $INSTALL_DIR/
+COPY --chown=oracle:oinstall ./config/manifest   $INSTALL_DIR/
 COPY --chown=oracle:oinstall ./database/         $INSTALL_DIR/
 
 # Install DB software binaries
