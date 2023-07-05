@@ -123,7 +123,7 @@ getPreinstall() {
   # Set the EPEL release:
   release=$(cat /etc/os-release | grep -e "^PLATFORM_ID" | sed -e 's/^.*://g' -e 's/"//g')
 
-  export RPM_LIST="openssl oracle-epel-release-$release $pre $RPM_LIST" 
+  export RPM_LIST="file hostname openssl oracle-epel-release-$release $pre $RPM_LIST" 
 }
 
 getYum() {
@@ -443,15 +443,17 @@ installOracle() {
             | awk '{print $1,$2}' | while read checksum install_file
           do checkSum "$INSTALL_DIR/$install_file" "$checksum"
              case $ORACLE_VERSION in
-                  18.*|19.*|2*) sudo su - oracle -c "unzip -oq -d $ORACLE_HOME $INSTALL_DIR/$install_file" ;;
-                             *) sudo su - oracle -c "unzip -oq -d $INSTALL_DIR $INSTALL_DIR/$install_file" ;;
+                  18.*|19.*|2*) __dest_dir=$ORACLE_HOME
+                                __runinstaller=$__oracle_home/runInstaller
+                                __install_options="-ignorePrereqFailure" ;;
+                             *) __dest_dir=$INSTALL_DIR
+                                __runinstaller=$INSTALL_DIR/database/runInstaller
+                                __install_options="-ignoresysprereqs -ignoreprereq" ;;
              esac
+             sudo su - oracle -c "unzip -oq -d $__dest_dir $INSTALL_DIR/$install_file" || error "The installation file (${install_file}) was not found."
        done
        # Run the installation
-       case $ORACLE_VERSION in
-            18.*|19.*|2*) sudo su - oracle -c "$__oracle_home/runInstaller -silent -force -waitforcompletion -responsefile $INSTALL_DIR/$INSTALL_RESPONSE -ignorePrereqFailure" ;;
-                       *) sudo su - oracle -c "$INSTALL_DIR/database/runInstaller -silent -force -waitforcompletion -responsefile $INSTALL_DIR/$INSTALL_RESPONSE -ignoresysprereqs -ignoreprereq" ;;
-       esac
+       sudo su - oracle -c "$__runinstaller -silent -force -waitforcompletion -responsefile $INSTALL_DIR/$INSTALL_RESPONSE $__install_options"
        set -e
 
          if [ ! "$("$__oracle_home"/perl/bin/perl -v)" ]

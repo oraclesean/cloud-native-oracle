@@ -9,7 +9,7 @@ ARG ORACLE_PATH=/home/oracle
 ARG ORACLE_VERSION=###ORACLE_BASE_VERSION###
 
 # Build defaults
-ARG RPM_LIST="file git hostname less strace sudo tree vi which bash-completion"
+ARG RPM_LIST="git less strace sudo tree vi which bash-completion"
 ARG RPM_SUPPLEMENT="rlwrap"
 ARG MIN_SPACE_GB=###MIN_SPACE_GB_ARG###
 ARG BUILD_DATE=
