@@ -47,7 +47,7 @@ The only database currently supported for ARM architectures is Oracle 19.19.
 ```
 This will create two images
 - A "database-ready" Oracle Enterprise Linux image, with `git`, `less`, `strace`, `tree`, `vi`, `which`, `bash-completion`, and `rlwrap` installed.
-  - Change these by editing the `RPM_LIST` in `templates/oraclelinux.dockerfile`, or pass a build argument. Note that you *must* include `hostname` and `file` on `oraclelinux:8-slim` builds.
+  - Change these by editing the `RPM_LIST` in `templates/oraclelinux.dockerfile`, or pass a build argument.
 - A database image with a default `ORACLE_BASE` under `/u01/app/oracle` and an `ORACLE_HOME` under `$ORACLE_BASE/product/19c/dbhome_1`.
   - Change these by editing the entries in `templates/db.dockerfile`, or pass build arguments for each parameter.
 
