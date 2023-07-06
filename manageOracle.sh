@@ -25,7 +25,7 @@ logger() {
   __line="# ----------------------------------------------------------------------------------------------- #"
 
     if [[ $__format =~ B ]]
-  then printf "\n${__line}\n"
+  then printf "\n%s\n" "${__line}"
   elif [[ $__format =~ b ]]
   then printf "\n"
   fi
@@ -37,10 +37,10 @@ logger() {
   else dt=""
   fi
 
-  printf "%s %s\n" "  $@" "$dt"
+  printf "%s %s\n" "  $*" "$dt"
 
     if [[ $__format =~ A ]]
-  then printf "${__line}\n"
+  then printf "%s\n" "${__line}"
   elif [[ $__format =~ a ]]
   then printf "\n"
   fi
@@ -92,7 +92,7 @@ replaceVars() {
   local __file="$1"
   local __var="$2"
     if [ -z "$3" ]
-  then local __val="$(eval echo \$$(echo $__var))"
+  then local __val="$(eval echo \$$(echo "$__var"))"
   else local __val="$3"
   fi
   sed -i -e "s|###${__var}###|${__val}|g" "$__file"
@@ -121,7 +121,7 @@ getPreinstall() {
   esac
 
   # Set the EPEL release:
-  release=$(cat /etc/os-release | grep -e "^PLATFORM_ID" | sed -e 's/^.*://g' -e 's/"//g')
+  release=$(grep -e "^PLATFORM_ID" /etc/os-release | sed -e 's/^.*://g' -e 's/"//g')
 
   export RPM_LIST="file hostname openssl oracle-epel-release-$release $pre $RPM_LIST" 
 }
@@ -145,11 +145,11 @@ configENV() {
   getYum
 
   $YUM -y update
-  $YUM -y install $RPM_LIST
+  $YUM -y install "$RPM_LIST"
   sync
 
     if [ -n "$RPM_SUPPLEMENT" ]
-  then $YUM -y install $RPM_SUPPLEMENT
+  then $YUM -y install "$RPM_SUPPLEMENT"
   fi
 
   # Add option to add systemd support to the image (for AHF/TFA)
@@ -157,7 +157,7 @@ configENV() {
   then $YUM -y install systemd
        cd /lib/systemd/system/sysinit.target.wants
         for i in *
-         do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i
+         do [ "$i" == systemd-tmpfiles-setup.service ] || rm -f "$i"
        done
        rm -f /etc/systemd/system/{getty,graphical,local-fs,remote-fs,sockets,sysinit,system-update,systemd-remount}.target.wants/*
        rm -f /lib/systemd/system/{anaconda,basic,local-fs,multi-user}.target.wants/*
@@ -197,12 +197,12 @@ checkSum() {
 
 setBase() {
   case $ORACLE_VERSION in
-       18*|19*|2*) export ORACLE_BASE_CONFIG="$($ORACLE_HOME/bin/orabaseconfig)/dbs"
-                   export ORACLE_BASE_HOME="$($ORACLE_HOME/bin/orabasehome)" ;;
-                *) export ORACLE_BASE_CONFIG="$ORACLE_HOME/dbs"
-                   export ORACLE_BASE_HOME="$ORACLE_HOME" ;;
+       18*|19*|2*) ORACLE_BASE_CONFIG=$("$ORACLE_HOME"/bin/orabaseconfig)/dbs; export ORACLE_BASE_CONFIG
+                   ORACLE_BASE_HOME=$("$ORACLE_HOME"/bin/orabasehome); export ORACLE_BASE_HOME ;;
+                *) ORACLE_BASE_CONFIG="$ORACLE_HOME"/dbs; export ORACLE_BASE_CONFIG
+                   ORACLE_BASE_HOME="$ORACLE_HOME"; export ORACLE_BASE_HOME ;;
   esac
-  export TNS_ADMIN=$ORACLE_BASE_HOME/network/admin
+  export TNS_ADMIN="$ORACLE_BASE_HOME"/network/admin
 }
 
 mkPass() {
@@ -252,7 +252,7 @@ downloadPatch() {
     if [ ! -f "$__netrc" ]
   then error "The MOS credential file doesn't exist"
   fi
-  # Install curl if it isn't present.
+  # Install curl if it is not present.
   command -v curl >/dev/null 2>&1 || getYum; $YUM install -y curl
 
   # Log in to MOS if there isn't already a cookie file.
@@ -260,8 +260,8 @@ downloadPatch() {
   then sudo su - oracle -c "curl $__curl_flags \"https://updates.oracle.com/Orion/Services/download\" >/dev/null" || error "MOS login failed"
   fi
   # Set ownership of the patch directory.
-    if [ "$(stat -c "%G" $__patch_dir)" != "$(id -gn oracle)" ]
-  then chown oracle:$(id -gn oracle) "$__patch_dir" || error "Error changing ownership of $__patch_dir"
+    if [ "$(stat -c "%G" "$__patch_dir")" != "$(id -gn oracle)" ]
+  then chown oracle:"$(id -gn oracle)" "$__patch_dir" || error "Error changing ownership of $__patch_dir"
   fi
   # Get the list of available patches.
   sudo su - oracle -c "curl $__curl_flags -L --location-trusted \"https://updates.oracle.com/Orion/SimpleSearch/process_form?search_type=patch&patch_number=${__patch_id}&plat_lang=${__platform_id}\" -o $__patch_list" || error "Error downloading the patch list"
@@ -291,10 +291,10 @@ installPatch() {
     if [ -d "$INSTALL_DIR/patches" ]
   then
          if [ -f "$manifest" ]
-       then manifest="$(find $INSTALL_DIR -maxdepth 1 -name "manifest*" 2>/dev/null)"
+       then manifest="$(find "$INSTALL_DIR" -maxdepth 1 -name "manifest*" 2>/dev/null)"
             # Allow manifest to hold version-specific (version = xx.yy) and generic patches (version = xx) and apply them in order.
-            grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\b${1}\b[[:blank:]]*\(${__major_version}[[:blank:]]\|${__minor_version}[[:blank:]]\)" $manifest \
-                 | grep -i $(uname -m | sed -e 's/_/\./g' -e 's/-/\./g' -e 's/aarch64/arm64/g') \
+            grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\b${1}\b[[:blank:]]*\(${__major_version}[[:blank:]]\|${__minor_version}[[:blank:]]\)" "$manifest" \
+                 | grep -i "$(uname -m | sed -e 's/_/\./g' -e 's/-/\./g' -e 's/aarch64/arm64/g')" \
                  | awk '{print $5,$2,$1}' | while read patchid install_file checksum
                do
                   # If there's a credential file and either:
@@ -303,8 +303,8 @@ installPatch() {
                   # ...the checksum in the patch manifest doesn't match the file
                   local __checksum_result=$(checkSum "$INSTALL_DIR/patches/$install_file" "$checksum" 2>/dev/null)
                     
-                    if [[ -f "/home/oracle/.netrc" && ( ! -f "$INSTALL_DIR/patches/$install_file" || "$(echo $FORCE_PATCH | grep -ci -e "\b$1\b" -e "\b$patchid\b" -e "\ball\b")" -eq 1 ) || "$__checksum_result" -ne 0 ]]
-                  then downloadPatch $patchid $INSTALL_DIR/patches $install_file
+                    if [[ -f "/home/oracle/.netrc" && ( ! -f "$INSTALL_DIR/patches/$install_file" || "$(echo "$FORCE_PATCH" | grep -ci -e "\b$1\b" -e "\b$patchid\b" -e "\ball\b")" -eq 1 ) || "$__checksum_result" -ne 0 ]]
+                  then downloadPatch "$patchid" "$INSTALL_DIR"/patches "$install_file"
                   fi
                     if [ -f "$INSTALL_DIR/patches/$install_file" ]
                   then case $1 in
@@ -335,7 +335,7 @@ installOracle() {
 
   # Default the version and home, use local values to allow multi-home installations
   local __version=${1:-$ORACLE_VERSION}
-  local __major_version=$(echo $__version | cut -d. -f1)
+  local __major_version=$(echo "$__version" | cut -d. -f1)
   local __oracle_home=${2:-$ORACLE_HOME}
 
     if [ -z "$ORACLE_EDITION" ]
@@ -383,7 +383,7 @@ installOracle() {
             fi
        fi
 
-       getYum; $YUM -y localinstall $ORACLE_RPM
+       getYum; $YUM -y localinstall "$ORACLE_RPM"
 
        # Determine the name of the init file used for RPM installation
 #         if [ "$__version" == "11.2.0.2" ] && [ "$ORACLE_EDITION" != "XE" ]
@@ -416,7 +416,7 @@ installOracle() {
               if ! [[ $OLD_INV -ef $ORACLE_INV ]]
             then mv "$OLD_INV"/* "$ORACLE_INV"/ || error "Failed to move Oracle Inventory from $OLD_INV to $ORACLE_INV"
                  find / -name oraInst.loc -exec sed -i -e "s|^inventory_loc=.*$|inventory_loc=$ORACLE_INV|g" {} \;
-                 rm -fr $OLD_INV || error "Failed to remove Oracle Inventory from $OLD_INV"
+                 rm -fr "$OLD_INV" || error "Failed to remove Oracle Inventory from $OLD_INV"
             fi
 
               if ! [[ $OLD_HOME -ef $__oracle_home ]]
@@ -428,18 +428,18 @@ installOracle() {
 
               if ! [[ $OLD_BASE -ef $ORACLE_BASE ]]
             then rsync -a "$OLD_BASE"/ "$ORACLE_BASE" || error "Failed to move ORACLE_BASE from $OLD_BASE to $ORACLE_BASE"
-                 rm -rf $OLD_BASE || error "Failed to remove $OLD_BASE after moving to $ORACLE_BASE"
+                 rm -rf "$OLD_BASE" || error "Failed to remove $OLD_BASE after moving to $ORACLE_BASE"
             fi
   	 fi
 
   else # Install Oracle from archive
 
-       manifest="$(find $INSTALL_DIR -maxdepth 1 -name "manifest*" 2>/dev/null)"
+       manifest="$(find "$INSTALL_DIR" -maxdepth 1 -name "manifest*" 2>/dev/null)"
        # Some versions have multiple files that must be unzipped to the correct location prior to installation.
        # Loop over the manifest, retrieve the file and checksum values, unzip the installation files.
        set +e
-       grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\bdatabase\b.*${ORACLE_EDITION::2}" $manifest \
-            | grep -i $(uname -m | sed -e 's/_/\./g' -e 's/-/\./g' -e 's/aarch64/arm64/g') \
+       grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\bdatabase\b.*${ORACLE_EDITION::2}" "$manifest" \
+            | grep -i "$(uname -m | sed -e 's/_/\./g' -e 's/-/\./g' -e 's/aarch64/arm64/g')" \
             | awk '{print $1,$2}' | while read checksum install_file
           do checkSum "$INSTALL_DIR/$install_file" "$checksum"
              case $ORACLE_VERSION in
@@ -481,7 +481,7 @@ installOracle() {
 
             # Relink
             cd "$__oracle_home"/bin
-            sudo su - oracle -c "relink all" || logger "$(cat $__oracle_home/install/relink.log)"; error "Relink failed"
+            sudo su - oracle -c "relink all" || logger "$(cat "$__oracle_home"/install/relink.log)"; error "Relink failed"
        fi
 
 echo "End of binary installation"
@@ -553,10 +553,11 @@ runsql() {
   then spool="spool $2 append"
   fi
 
-  NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'
+  export NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'
   "$ORACLE_HOME"/bin/sqlplus -S / as sysdba << EOF
 set head off termout on verify off lines 300 pages 9999 trimspool on feed off serverout on
 whenever sqlerror exit warning
+"$spool"
 $1
 EOF
 
@@ -567,15 +568,15 @@ EOF
 }
 
 startListener() {
-    if [ "$(ps -ef | grep tnslsnr | grep $ORACLE_HOME | grep -v grep | wc -l)" -eq 0 ]
+    if [ "$(ps -ef | grep tnslsnr | grep "$ORACLE_HOME" | grep -v grep | wc -l)" -eq 0 ]
   then
-       $ORACLE_HOME/bin/lsnrctl start 2>/dev/null
+       "$ORACLE_HOME"/bin/lsnrctl start 2>/dev/null
   fi
 }
 
 stopListener() {
    for __oh in $(egrep -v "^#|^$" /etc/oratab | cut -d: -f2)
-    do $_oh/bin/lsnrctl stop 2>/dev/null 
+    do "$__oh"/bin/lsnrctl stop 2>/dev/null 
   done
 }
 
@@ -653,7 +654,7 @@ runDBCA() {
        then # Start the listener in this home
             startListener
             unset __pdb_only
-            SIDENV="export ORACLE_SID=$ORACLE_SID"
+            export SIDENV="export ORACLE_SID=$ORACLE_SID"
        fi
        addTNSEntry "$ORACLE_SID"
        SID_NUM=$((SID_NUM+1))
@@ -672,7 +673,7 @@ runDBCA() {
                  then # Create the database and the first PDB
                       logger BAd "${FUNCNAME[0]}: Creating container database $__db_msg and pluggable database $ORACLE_PDB"
                       createDatabase "$__dbcaresponse" "$INIT_PARAMS" TRUE 1 "$ORACLE_PDB" "$PDB_ADMIN"
-                      printf "\nexport ORACLE_PDB=$ORACLE_PDB\n" >> $HOME/.bashrc
+                      printf "\nexport ORACLE_PDB=%s\n" "$ORACLE_PDB" >> "$HOME"/.bashrc
                  else # Create additional PDB
                       logger BAd "${FUNCNAME[0]}: Creating pluggable database $ORACLE_PDB"
                       createDatabase NONE NONE TRUE 1 "$ORACLE_PDB" "$PDB_ADMIN"
@@ -690,9 +691,9 @@ runDBCA() {
             logger BAd "${FUNCNAME[0]}: Creating container database $__db_msg and $__pdb_count pluggable database(s) with name $ORACLE_PDB"
             createDatabase "$__dbcaresponse" "$INIT_PARAMS" TRUE "$__pdb_count" "$ORACLE_PDB" "$PDB_ADMIN"
               if [ "$__pdb_count" -eq 1 ]
-            then printf "\nexport ORACLE_PDB=$ORACLE_PDB\n" >> $HOME/.bashrc
+            then printf "\nexport ORACLE_PDB=%s\n" "$ORACLE_PDB" >> "$HOME"/.bashrc
                  addTNSEntry "$ORACLE_PDB"
-            else printf "\nexport ORACLE_PDB=${ORACLE_PDB}1\n" >> $HOME/.bashrc
+            else printf "\nexport ORACLE_PDB=%s\n" "${ORACLE_PDB}1" >> "$HOME"/.bashrc
                   for ((PDB_NUM=1; PDB_NUM<=__pdb_count; PDB_NUM++))
                    do addTNSEntry "${ORACLE_PDB}""${PDB_NUM}"
                  done
@@ -701,7 +702,7 @@ runDBCA() {
        else # 11g database OR PDB_COUNT is not set; create a non-container database:
             logger BAd "${FUNCNAME[0]}: Creating database $__db_msg"
             createDatabase "$__dbcaresponse" "$INIT_PARAMS" FALSE
-            printf "\nunset ORACLE_PDB\n" >> $HOME/.bashrc
+            printf "\nunset ORACLE_PDB\n" >> "$HOME"/.bashrc
        fi
 
   done
@@ -751,7 +752,7 @@ createDatabase() {
 
 createAudit() {
     if [ ! -d "$ORACLE_BASE/admin/$1/adump" ]
-  then mkdir -p $ORACLE_BASE/admin/$1/adump || error "Could not create the audit directory for $1"
+  then mkdir -p "$ORACLE_BASE"/admin/"$1"/adump || error "Could not create the audit directory for $1"
   fi
 }
 
@@ -764,7 +765,7 @@ moveFiles() {
   # The ORACLE_HOME in the configuration directory oratab is the source of truth
   # for existing databases, particularly after an upgrade.
     if [ -f "$ORADATA/dbconfig/$ORACLE_SID/oratab" ]
-  then export ORACLE_HOME="$(egrep "^${ORACLE_SID}:" "$ORADATA/dbconfig/$ORACLE_SID/oratab" | egrep -v "^$|^#" | cut -d: -f2 | head -1)"
+  then ORACLE_HOME="$(egrep "^${ORACLE_SID}:" "$ORADATA/dbconfig/$ORACLE_SID/oratab" | egrep -v "^$|^#" | cut -d: -f2 | head -1)"; export ORACLE_HOME
   fi
 
     if [ -f "$ORADATA/dbconfig/$ORACLE_SID/spfile${ORACLE_SID}.ora" ]
@@ -802,10 +803,10 @@ moveFiles() {
   # Find wallet subdirectories in dbconfig and relink them:
     if [ -f "$__dbconfig/sqlnet.ora" ]
   then
-        for dirname in $(find $__dbconfig -mindepth 1 -type d)
-         do dir=$(basename $dirname)
+        for dirname in $(find "$__dbconfig" -mindepth 1 -type d)
+         do dir=$(basename "$dirname")
             # Search the sqlnet.ora for an exactly matching subdirectory
-            location=$(grep -e "^[^#].*\/$dir\/" $__dbconfig/sqlnet.ora | sed -e "s|^[^/]*/|/|g" -e "s|[^/]*$||")
+            location=$(grep -e "^[^#].*\/$dir\/" "$__dbconfig"/sqlnet.ora | sed -e "s|^[^/]*/|/|g" -e "s|[^/]*$||")
               if [ -n "$location" ] && [ ! -d "$location" ]
             then # Create the location if it doesn't exist
                  mkdir -p "$location"
@@ -823,7 +824,7 @@ moveFiles() {
 }
 
 addTNSEntry() {
-  ALIAS=$1
+  export ALIAS=$1
   setBase
   copyTemplate "$INSTALL_DIR"/tnsnames.ora.tmpl "$ORACLE_BASE_HOME"/network/admin/tnsnames.ora append
 }
@@ -890,11 +891,11 @@ postInstallRoot() {
   logger BA "Running root scripts"
     if [ -n "$ORACLE_INV" ] && [ -d "$ORACLE_INV" ] && [ -f "$ORACLE_INV/orainstRoot.sh" ]
   then logger b "Running orainstRoot.sh script in $ORACLE_INV"
-       $ORACLE_INV/orainstRoot.sh || error "There was a problem running $ORACLE_INV/orainstRoot.sh"
+       "$ORACLE_INV"/orainstRoot.sh || error "There was a problem running $ORACLE_INV/orainstRoot.sh"
   fi
     if [ -n "$ORACLE_HOME" ] && [ -d "$ORACLE_HOME" ] && [ -f "$ORACLE_HOME/root.sh" ]
   then logger b "Running root.sh script in $ORACLE_HOME"
-       $ORACLE_HOME/root.sh || error "There was a problem running $ORACLE_HOME/root.sh"
+       "$ORACLE_HOME"/root.sh || error "There was a problem running $ORACLE_HOME/root.sh"
   fi
 
   # If this is an upgrade image, run the target root script and attach the new home.
@@ -939,7 +940,7 @@ runUserScripts() {
                   *)        logger ba "${FUNCNAME[0]}: Ignored file $f" ;;
              esac
 #        done
-        done < <(find $SCRIPTS_ROOT/*.{sql,sh} 2>/dev/null | sort)
+        done < <(find "$SCRIPTS_ROOT"/*.{sql,sh} 2>/dev/null | sort)
 
        logger A "${FUNCNAME[0]}: User scripts complete"
   fi
@@ -1025,12 +1026,11 @@ then error "The SID must be alphanumeric"
 elif [ -z "$ORACLE_PDB" ] && [ "$__pdb_count" -eq 0 ] && [ -z "$PDB_LIST" ]
 then # No PDB name + no PDB count + no PDB list = Not a container DB
      export ORACLE_SID=${__oracle_sid:-ORCL}
-#     unset ORACLE_PDB
      unset PDB_COUNT
      unset PDB_LIST
-elif [ ! -z "$PDB_LIST" ]
+elif [ -n "$PDB_LIST" ]
 then # PDB list is defined; create the first PDB as the fist PDB in the list.
-     export ORACLE_PDB=$(echo $PDB_LIST | cut -d, -f1)
+     export ORACLE_PDB=$(echo "$PDB_LIST" | cut -d, -f1)
 elif [ -n "$ORACLE_PDB" ] && [ -z "$PDB_COUNT" ]
 then # No PDB count but PDB name; create a single PDB with the given name.
      export ORACLE_PDB=$ORACLE_PDB
@@ -1056,17 +1056,17 @@ then # Before all else, move files. This puts the oratab from config into the ex
      fi
 
      # Start the "default" database defined by ORACLE_SID:
-     . $__oraenv <<< $ORACLE_SID
+     . "$__oraenv" <<< "$ORACLE_SID"
      createAudit "$ORACLE_SID"
      startDB
 
      # Preserve the default ORACLE_SID used to call the container:
      DEFAULT_SID=$ORACLE_SID
      # Find other SID:
-      for __sid in "$(grep $__home /etc/oratab | grep -v "^#" | grep -Ev "^$DEFAULT_SID\:" | cut -d: -f1)"
+      for __sid in "$(grep "$__oracle_home" /etc/oratab | grep -v "^#" | grep -Ev "^$DEFAULT_SID\:" | cut -d: -f1)"
        do
             if [ -z "$__sid" ]
-          then . $__oraenv <<< "$__sid"
+          then . "$__oraenv" <<< "$__sid"
                createAudit "$__sid"
                moveFiles
                startDB
@@ -1074,7 +1074,7 @@ then # Before all else, move files. This puts the oratab from config into the ex
      done
 
      # Restore the default ORACLE_SID environment
-     . $__oraenv <<< $DEFAULT_SID
+     . "$__oraenv" <<< "$DEFAULT_SID"
      # End upgrade additions
 else # Create the TNS configuration
      setBase
@@ -1089,7 +1089,7 @@ else # Create the TNS configuration
 
      # Create a database password if none exists
        if [ -z "$ORACLE_PWD" ]
-     then export ORACLE_PWD="$(mkPass)"
+     then ORACLE_PWD="$(mkPass)"; export ORACLE_PWD
           logger BA "Oracle password for SYS, SYSTEM and PDBADMIN: $ORACLE_PWD"
      fi
 
