@@ -19,20 +19,46 @@ One [reason behind this repo](#why-this-repo) was reducing duplication. I wanted
 This is a temporary workaround. I'm working on integrating new capabilities but until then, `buildDBImage.sh` manages Dockerfiles and builds.
 
 ## Build options and examples
-To build a database image, run `buildDBImage.sh` and pass optional values for version, edition, tag, source, and repository name:
+To build a database image, run `buildDBImage.sh` and pass optional values:
 ```
-./buildDBImage.sh [version] [edition] [tag] [source] [repository]
+./buildDBImage.sh [Options]
+ Options:
+        --build-arg stringArray     Set build-time variables
+    -d, --debug                     Turn on build debugging
+    -e, --edition string            Set the database edition
+                                        EE: Enterprise Edition (Default)
+                                        SE: Standard Edition
+                                        XE: Express Edition (Versions 11.2.0.2, 18.4, 23.1.0 only)
+        --force-patch string        Force patch download from MOS
+                                        all: Re-download all patches during install
+                                        opatch: Re-download opatch only
+                                        patch: Re-download patches but not opatch
+        --force-rm                  Force-remove build cache
+    -k, --dockerfile-keep           Keep the dynamically generated Dockerfile after build completion
+    -n, --image-name string         Repository name for the completed image (Default: oracle/db)
+        --no-cache                  Do not use cache when building the image
+        --no-sum                    Do not perform file checksums
+        --progress string           Display build progress
+                                        auto (Default)
+                                        plain: Show container output
+                                        tty: Show abbreviated output
+        --prune-cache               Prune build cache on success
+    -q, --quiet                     Suppress build output
+    -r, --force-rebuild             Force rebuild the base Linux image if it exists
+        --read-only-home            Configure a Read-Only Oracle Home
+        --remove-components string  Comma-delimited list of components to remove
+                                    Options: DBMA,HELP,ORDS,OUI,PATCH,PILOT,SQLD,SUP,UCP,TCP,ZIP
+                                    Default is all of the above
+        --rpm stringArray           Comma-delimited list of binaries/libraries to install
+                                        Default: bash-completion,git,less,strace,tree,vi,which
+        --secret string             File name containing MOS credentials for patch download
+    -S, --source-image string       Source OS image repository (Default: oraclelinux)
+    -T, --source-tag string         Source OS tag (Default: 8-slim)
+    -t, --tag string                Tag for the completed image (Default: [ORACLE_VERSION]-[ORACLE_EDITION])
+    -v, --version string            Oracle Database version (Default: 19.19)
+                                    The version must exist in the manifest file within the ./config directory
+    -h, --help                      This menu
 ```
-
-- `version`: The database version to build. The value must match a version in a manifest file. (Default: `19.19`)
-- `edition`: The edition to build. Acceptable values:
-  - `EE`: Enterprise Edition
-  - 'SE`: Standard Edition, Standard Edition 2
-  - `XE`: Express Edition (Only for versions 11.2.0.2, 18.4)
-- `tag`: The base OEL version. Options are `7-slim` or `8-slim`. (Default: `8-slim`)
-- `source`: The OEL source. (Default: `oraclelinux`)
-- `repository`: The image repository name assignment. (Default: `oraclesean/db`)
-
 Images created by the script are named as: `[repository]:[version]-[edition]`
 It additionally creates a version-specific Linux image: `[source]-[tag]-[base_version]` where the base version is 11g, 12.1, 12.2, 18c, 19c, or 21c. This Linux image includes the database prerequisites for the given version and makes building multiple database images for the same database version faster. The majority of the build time is spent applying prerequisite RPMs. The build understands if a version-ready image is present and uses it.
 
@@ -77,6 +103,21 @@ All database versions are supported.
 ./buildDBImage.sh <Release Update> EE
 # ... where <Release Update> is the RU to apply atop the base 21.3
 ```
+
+### Note for MacOS users
+The default `/bin/bash` on OSX is 3.2, and the natively installed version of `getopt` is not GNU-compatible, meaning you won't be able to pass any parameters to the build script. To get around this limitation, install `bash` and `gnu-getopt` via `brew`:
+```
+brew update
+brew install bash
+brew install gnu-getopt
+```
+Add the following line to your `$HOME/.bash_profile` to pre-empt the default `getopt` (replace the path to `gnu-getopt` if `brew` installs to a different location on your system):
+```
+export PATH="/opt/homebrew/opt/gnu-getopt/bin:$PATH"
+```
+Then, `source $HOME/.bash_profile` and confirm that `getopt -V` returns the version (and not `--`).
+
+As a workaround, edit the script and hardcode the options that would be set interactively.
 
 ## FORCE_PATCH and `.netrc`
 When a `'.netrc` file is present, the `FORCE_PATCH` build argument enables patch downloads from My Oracle Support. Patches are downloaded when:
