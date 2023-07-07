@@ -1,3 +1,5 @@
+#!/bin/bash
+
 logger() {
   local __format="$1"
   shift 1
@@ -5,15 +7,15 @@ logger() {
   __line="# ----------------------------------------------------------------------------------------------- #"
 
     if [[ $__format =~ B ]]
-  then printf "\n${__line}\n"
+  then printf "\n%s\n" "$__line"
   elif [[ $__format =~ b ]]
   then printf "\n"
   fi
 
-  printf "%s\n" "  $@"
+  printf "%s\n" "  $*"
 
     if [[ $__format =~ A ]]
-  then printf "${__line}\n\n"
+  then printf "%s\n\n" "$__line"
   elif [[ $__format =~ a ]]
   then printf "\n"
   fi
@@ -26,7 +28,7 @@ warn() {
 
 error() {
   printf "ERROR: %s\nExiting...\n" "$@"
-  return 1
+  exit 1
 }
 
 debug() {
@@ -54,7 +56,8 @@ replaceVars() {
   then local __val="$(eval echo "\$$(echo "$__var")")"
   else local __val="$3"
   fi
-  sed -i '' -e "s|###${__var}###|"${__val}"|g" "$__file"
+#  sed -i '' -e "s|###${__var}###|"${__val}"|g" "$__file"
+  sed -i '' -e "s|###${__var}###|${__val}|g" "$__file"
 }
 
 checkSum() {
