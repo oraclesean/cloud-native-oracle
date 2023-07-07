@@ -24,7 +24,7 @@ LABEL org.label-schema.url="http://oraclesean.com"
 LABEL org.label-schema.version="$BUILD_VERSION"
 LABEL org.label-schema.build-date="$BUILD_DATE"
 LABEL org.label-schema.vcs-url="https://github.com/oraclesean"
-LABEL org.label-schema.name="###OEL_IMAGE###"
+LABEL org.label-schema.name="###LINUX_IMAGE###"
 LABEL org.label-schema.description="oraclelinux with Oracle Database ###PREINSTALL_TAG### prerequisites"
 LABEL maintainer="Sean Scott <sean.scott@viscosityna.com>"
 

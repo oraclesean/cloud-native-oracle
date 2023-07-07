@@ -190,7 +190,9 @@ configDBENV() {
 checkSum() {
   # $1 is the file name
   # $2 is the md5sum
-    if [ -z "$FILE_MD5SUM" ] && [ "$(type md5sum 2>/dev/null)" ] && [ ! "$(md5sum "$1" | awk '{print $1}')" == "$2" ]
+    if [ -n "SKIP_MD5SUM" ]
+  then logger "Skipping checksums"
+  elif [ -z "$FILE_MD5SUM" ] && [ "$(type md5sum 2>/dev/null)" ] && [ ! "$(md5sum "$1" | awk '{print $1}')" == "$2" ]
   then error "Checksum for $1 did not match"
   fi
 }
