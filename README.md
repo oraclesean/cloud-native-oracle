@@ -4,9 +4,9 @@ A repository of container image builds for Oracle databases, with support for In
 Jump to a section:
 - [Build an image](#build-an-image)
   - [Build options and examples](#build-options-and-examples)
-  - [Build example: Apple Silicon/ARM systems](build-example-macs-with-apple-siliconarm-systems)
-  - [Build example: Intel-based systems](build-example-intel-based-systems-linux-mac-windows)
-  - [Note for OSX Users](note-for-osx-users)
+  - [Build example: Apple Silicon/ARM systems](#build-example-macs-with-apple-siliconarm-systems)
+  - [Build example: Intel-based systems](#build-example-intel-based-systems-linux-mac-windows)
+  - [Note for OSX Users](#note-for-osx-users)
 - [Run a container](#run-a-container)
   - [Examples: Run Oracle Database containers](#run-options-and-examples)
 - [Build and run on Apple Silicon/ARM systems](#example-for-apple-silicon)
