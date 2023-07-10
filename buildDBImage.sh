@@ -149,9 +149,11 @@ processManifest() {
     if [ -f ./config/manifest ]
   then
        # Get the correct architecture.
-       # Use `uname -m | sed -e 's/_.*$//'` to get the base architechture of x86 or arm64.
-       # x86 files mix upper/lowercase x and may not append "64". A case-insensitive match on x86 or arm64 should be enough.
-       grep -i "$(uname -m | sed -e 's/_.*$//')" ./config/manifest | grep -ve "^#" | awk '{print $1,$2,$3,$4,$5}' | while IFS=" " read -r checksum filename filetype version extra
+       case "$(uname -m)" in
+            arm64) arch="arm64" ;;   # Match ARM64
+            *)     arch="x86|x64" ;; # Regexp match for x86 and x64 because non-ARM files are identified by both x86 and x64 :(
+       esac
+       grep -i -E "$arch" ./config/manifest | grep -ve "^#" | awk '{print $1,$2,$3,$4,$5}' | while IFS=" " read -r checksum filename filetype version extra
           do
                if [ "$filetype" == "database" ] && [ "$version" == "$ORACLE_BASE_VERSION" ] && [ -f ./database/"$filename" ] && [ -z "$edition" ]
              then case $1 in
