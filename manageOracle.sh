@@ -145,7 +145,7 @@ configENV() {
   getYum
 
   $YUM -y update
-  $YUM -y install "$RPM_LIST"
+  $YUM -y install $RPM_LIST
   sync
 
     if [ -n "$RPM_SUPPLEMENT" ]
