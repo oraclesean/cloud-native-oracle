@@ -118,7 +118,8 @@ setBuildKit() {
        MOS_CRED_FN=$(basename "$MOS_CRED_FQ")
          if [ -f "$MOS_CRED_FQ" ]
        then export MOS_SECRET="--mount=type=secret,id=netrc,mode=0600,uid=54321,gid=54321,dst=/home/oracle/$MOS_CRED_FN"
-            DB_BUILD_OPTIONS="$DB_BUILD_OPTIONS --secret id=netrc,src=$MOS_CRED_FQ"
+            DB_BUILD_OPTIONS=("${DB_BUILD_OPTIONS[@]}" --secret id=netrc,src="$MOS_CRED_FQ")
+            #DB_BUILD_OPTIONS="$DB_BUILD_OPTIONS --secret id=netrc,src=$MOS_CRED_FQ"
        fi
   fi
 }
@@ -272,34 +273,34 @@ then OPTS=de:hkn:qeS:t:T:v:
      while :
         do
            case "$1" in
-                     --build-arg         ) BUILD_OPTIONS="$BUILD_OPTIONS $2"; shift 2 ;;
-                -d | --debug             ) BUILD_OPTIONS="$BUILD_OPTIONS --build-arg DEBUG=\"bash -x\""; shift ;;
+                     --build-arg         ) BUILD_OPTIONS=("${BUILD_OPTIONS[@]}" --build-arg "$2"); shift 2 ;;
+                -d | --debug             ) BUILD_OPTIONS=("${BUILD_OPTIONS[@]}" --build-arg DEBUG="bash -x"); shift ;;
                 -e | --edition           ) case "${2^^}" in
                                                 EE | SE | XE         ) ORACLE_EDITION="${2^^}" ;;
                                                 *                    ) error "-e/--edition must be one of EE, SE, or XE" ;;
                                            esac
                                            shift 2 ;;
                      --force-patch       ) case "${2,,}" in
-                                                all | opatch | patch ) DB_BUILD_OPTIONS="$DB_BUILD_OPTIONS --build-arg FORCE_PATCH=${2,,}" ;;
+                                                all | opatch | patch ) DB_BUILD_OPTIONS=("${DB_BUILD_OPTIONS[@]}" --build-arg FORCE_PATCH="${2,,}") ;;
                                                 *                    ) error "--force-patch must be one of all, opatch, or patch" ;;
                                            esac
                                            shift 2 ;;
-                     --force-rm          ) BUILD_OPTIONS="$BUILD_OPTIONS --force-rm=true"; shift ;;
+                     --force-rm          ) BUILD_OPTIONS=("${BUILD_OPTIONS[@]}" --force-rm=true); shift ;;
                 -k | --dockerfile-keep   ) RM_DOCKERFILE=1; shift ;;
                 -n | --image-name        ) TARGET="$2"; shift 2 ;;
-                     --no-cache          ) BUILD_OPTIONS="$BUILD_OPTIONS --no-cache=true"; shift ;;
-                     --no-sum            ) DB_BUILD_OPTIONS="$DB_BUILD_OPTIONS --build-arg SKIP_MD5SUM=1"; shift ;;
+                     --no-cache          ) BUILD_OPTIONS=("${BUILD_OPTIONS[@]}" --no-cache=true); shift ;;
+                     --no-sum            ) DB_BUILD_OPTIONS=("${DB_BUILD_OPTIONS[@]}" --build-arg SKIP_MD5SUM=1); shift ;;
                      --progress          ) case "${2,,}" in
-                                                auto | plain | tty   ) BUILD_OPTIONS="$BUILD_OPTIONS --progress $2" ;;
+                                                auto | plain | tty   ) BUILD_OPTIONS=("${BUILD_OPTIONS[@]}" --progress "$2") ;;
                                                 *                    ) error "--progress must be one of auto, plain, or tty" ;;
                                            esac
                                            shift 2 ;;
                      --prune-cache       ) PRUNE_CACHE=1; shift ;;
-                -q | --quiet             ) BUILD_OPTIONS="$BUILD_OPTIONS --quiet"; shift ;;
+                -q | --quiet             ) BUILD_OPTIONS=("${BUILD_OPTIONS[@]}" --quiet); shift ;;
                 -r | --force-rebuild     ) FORCE_REBUILD=1; shift ;;
-                     --read-only-home    ) DB_BUILD_OPTIONS="$DB_BUILD_OPTIONS --build-arg ROOH=ENABLE"; shift ;;
-                     --remove-components ) DB_BUILD_OPTIONS="$DB_BUILD_OPTIONS --build-arg REMOVE_COMPONENTS=$2"; shift 2 ;;
-                     --rpm               ) OS_BUILD_OPTIONS="$OS_BUILD_OPTIONS --build-arg RPM_LIST=${2//,/ }"; shift 2 ;;
+                     --read-only-home    ) DB_BUILD_OPTIONS=("${DB_BUILD_OPTIONS[@]}" --build-arg ROOH=ENABLE); shift ;;
+                     --remove-components ) DB_BUILD_OPTIONS=("${DB_BUILD_OPTIONS[@]}" --build-arg REMOVE_COMPONENTS="$2"); shift 2 ;;
+                     --rpm               ) OS_BUILD_OPTIONS=("${OS_BUILD_OPTIONS[@]}" --build-arg RPM_LIST="${2//,/ }"); shift 2 ;;
                      --secret            )   if [ -f "$2" ]
                                            then MOS_CRED_FQ="$2"
                                            else error "Credential file $2 not found"
@@ -312,8 +313,6 @@ then OPTS=de:hkn:qeS:t:T:v:
                 -h | --help              ) usage 0 ;;
                      --                  ) shift; break ;;
                 *                        ) usage 1 ;;
-#      --build-context stringArray     Additional build contexts (e.g., name=path)
-#      --builder string                Override the configured builder instance (default "default")
            esac
       done
 fi
@@ -336,7 +335,7 @@ export TARGET_IMAGE="$TARGET":"$T_TAG"
 
 ## Set systemd options
 #  if [ -n "$SYSTEMD" ]
-#then OS_BUILD_OPTIONS="$OS_BUILD_OPTIONS --build-arg SYSTEMD=Y"
+#then OS_BUILD_OPTIONS=("${OS_BUILD_OPTIONS[@]}" --build-arg SYSTEMD=Y)
 #fi
 
   if [ -z "$(getImage)" ] || [ -n "$FORCE_REBUILD" ]
@@ -345,11 +344,11 @@ then # There is no base image or FORCE_BUILD is set: Create a base image.
      FROM_OEL_BASE="base"
      createDockerfiles oraclelinux || error "There was a problem creating the Dockerfiles"
      processDockerfile "$dockerfile"
-     BUILD_OPTIONS="$BUILD_OPTIONS --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+     BUILD_OPTIONS=("${BUILD_OPTIONS[@]}" --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')")
 
      # Run the build
-     DOCKER_BUILDKIT=$BUILDKIT docker build $OS_BUILD_OPTIONS \
-                              $BUILD_OPTIONS \
+     DOCKER_BUILDKIT=$BUILDKIT docker build "${OS_BUILD_OPTIONS[@]}" \
+                              "${BUILD_OPTIONS[@]}" \
                               -t "$LINUX_IMAGE" \
                               -f "$dockerfile" . && removeDockerfile "$dockerfile" "$dockerignore"
 fi
@@ -357,7 +356,7 @@ fi
 FROM_OEL_BASE="$(getImage)"; export FROM_OEL_BASE
 createDockerfiles db || error "There was a problem creating the Dockerfiles"
 processDockerfile "$dockerfile"
-BUILD_OPTIONS="$BUILD_OPTIONS --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+BUILD_OPTIONS=("${BUILD_OPTIONS[@]}" --build-arg BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')")
 
 # Add exceptions to the ignore file
   if [ "$ORACLE_BASE_VERSION" != "$ORACLE_VERSION" ]
@@ -368,8 +367,8 @@ else addException "*.${ORACLE_VERSION}.rsp" asset
 fi
 processManifest ignore
 
-DOCKER_BUILDKIT=$BUILDKIT docker build $DB_BUILD_OPTIONS \
-                         $BUILD_OPTIONS \
+DOCKER_BUILDKIT=$BUILDKIT docker build "${DB_BUILD_OPTIONS[@]}" \
+                         "${BUILD_OPTIONS[@]}" \
                          -t "$TARGET_IMAGE" \
                          -f "$dockerfile" . && removeDockerfile "$dockerfile" "$dockerignore"; docker images
 
