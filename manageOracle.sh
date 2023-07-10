@@ -191,7 +191,7 @@ checkSum() {
   # $1 is the file name
   # $2 is the md5sum
     if [ -n "SKIP_MD5SUM" ]
-  then logger "Skipping checksums"
+  then logger x "Skipping checksums"
   elif [ -z "$FILE_MD5SUM" ] && [ "$(type md5sum 2>/dev/null)" ] && [ ! "$(md5sum "$1" | awk '{print $1}')" == "$2" ]
   then error "Checksum for $1 did not match"
   fi
@@ -437,6 +437,15 @@ installOracle() {
   else # Install Oracle from archive
 
        manifest="$(find "$INSTALL_DIR" -maxdepth 1 -name "manifest*" 2>/dev/null)"
+       # Set variables for installation:
+       case $ORACLE_VERSION in
+            18.*|19.*|2*) __dest_dir="$ORACLE_HOME"
+                          __install_dir="$ORACLE_HOME"
+                          __install_opt="-ignorePrereqFailure" ;;
+                       *) __dest_dir="$INSTALL_DIR"
+                          __install_dir="$INSTALL_DIR/database"
+                          __install_opt="-ignoresysprereqs -ignoreprereq" ;;
+       esac
        # Some versions have multiple files that must be unzipped to the correct location prior to installation.
        # Loop over the manifest, retrieve the file and checksum values, unzip the installation files.
        set +e
@@ -444,18 +453,11 @@ installOracle() {
             | grep -i "$(uname -m | sed -e 's/_/\./g' -e 's/-/\./g' -e 's/aarch64/arm64/g')" \
             | awk '{print $1,$2}' | while read checksum install_file
           do checkSum "$INSTALL_DIR/$install_file" "$checksum"
-             case $ORACLE_VERSION in
-                  18.*|19.*|2*) __dest_dir=$ORACLE_HOME
-                                __runinstaller=$__oracle_home/runInstaller
-                                __install_options="-ignorePrereqFailure" ;;
-                             *) __dest_dir=$INSTALL_DIR
-                                __runinstaller=$INSTALL_DIR/database/runInstaller
-                                __install_options="-ignoresysprereqs -ignoreprereq" ;;
-             esac
              sudo su - oracle -c "unzip -oq -d $__dest_dir $INSTALL_DIR/$install_file" || error "The installation file (${install_file}) was not found."
        done
+
        # Run the installation
-       sudo su - oracle -c "$__runinstaller -silent -force -waitforcompletion -responsefile $INSTALL_DIR/$INSTALL_RESPONSE $__install_options"
+       sudo su - oracle -c "$__install_dir/runInstaller -silent -force -waitforcompletion -responsefile $INSTALL_DIR/$INSTALL_RESPONSE $__install_opt"
        set -e
 
          if [ ! "$("$__oracle_home"/perl/bin/perl -v)" ]
@@ -483,7 +485,7 @@ installOracle() {
 
             # Relink
             cd "$__oracle_home"/bin
-            sudo su - oracle -c "relink all" || logger "$(cat "$__oracle_home"/install/relink.log)"; error "Relink failed"
+            sudo su - oracle -c "relink all" || logger x "$(cat "$__oracle_home"/install/relink.log)"; error "Relink failed"
        fi
 
 echo "End of binary installation"
@@ -1084,8 +1086,8 @@ else # Create the TNS configuration
      copyTemplate "$INSTALL_DIR"/sqlnet.ora.tmpl "$ORACLE_BASE_HOME"/network/admin/sqlnet.ora replace
      copyTemplate "$INSTALL_DIR"/listener.ora.tmpl "$ORACLE_BASE_HOME"/network/admin/listener.ora replace
 
-       if [ -f "$SETUP_DIR"/tnsnames.ora ]
-     then cp "$SETUP_DIR"/tnsnames.ora "$ORACLE_BASE_HOME"/network/admin/tnsnames.ora
+       if [ -f "$INSTALL_DIR"/tnsnames.ora ]
+     then cp "$INSTALL_DIR"/tnsnames.ora "$ORACLE_BASE_HOME"/network/admin/tnsnames.ora
      else echo "$ORACLE_SID=localhost:1521/$ORACLE_SID" > "$ORACLE_BASE_HOME"/network/admin/tnsnames.ora
      fi
 
