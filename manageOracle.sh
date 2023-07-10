@@ -131,6 +131,13 @@ getYum() {
   YUM=$(command -v yum || command -v dnf || command -v microdnf)
 }
 
+getArch () {
+  case "$(uname -m)" in
+       arm64) arch="arm64" ;;   # Match ARM64
+       *)     arch="x86|x64" ;; # Regexp match for x86 and x64 because non-ARM files are identified by both x86 and x64 :(
+  esac
+}
+
 configENV() {
   set -e
 
@@ -296,7 +303,7 @@ installPatch() {
        then manifest="$(find "$INSTALL_DIR" -maxdepth 1 -name "manifest*" 2>/dev/null)"
             # Allow manifest to hold version-specific (version = xx.yy) and generic patches (version = xx) and apply them in order.
             grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\b${1}\b[[:blank:]]*\(${__major_version}[[:blank:]]\|${__minor_version}[[:blank:]]\)" "$manifest" \
-                 | grep -i "$(uname -m | sed -e 's/_/\./g' -e 's/-/\./g' -e 's/aarch64/arm64/g')" \
+                 | grep -i -E "$(getArch)" \
                  | awk '{print $5,$2,$1}' | while read patchid install_file checksum
                do
                   # If there's a credential file and either:
@@ -450,7 +457,7 @@ installOracle() {
        # Loop over the manifest, retrieve the file and checksum values, unzip the installation files.
        set +e
        grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\bdatabase\b.*${ORACLE_EDITION::2}" "$manifest" \
-            | grep -i "$(uname -m | sed -e 's/_/\./g' -e 's/-/\./g' -e 's/aarch64/arm64/g')" \
+            | grep -i -E "$(getArch)" \
             | awk '{print $1,$2}' | while read checksum install_file
           do checkSum "$INSTALL_DIR/$install_file" "$checksum"
              sudo su - oracle -c "unzip -oq -d $__dest_dir $INSTALL_DIR/$install_file" || error "The installation file (${install_file}) was not found."
