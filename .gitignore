@@ -1,0 +1,10 @@
+*.bak
+*.swp
+*/**/*.zip
+*/**/*.rpm
+.dockerignore
+#*/install/patches/0*
+/config/.mos
+/config/.netrc
+Dockerfile.db.*
+Dockerfile.oraclelinux.*
