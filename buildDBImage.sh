@@ -149,9 +149,9 @@ processManifest() {
     if [ -f ./config/manifest ]
   then
        # Get the correct architecture.
-       # Use `uname -m | sed -e 's/_/\./g' -e 's/-/\./g'` replaces underscores (_) and dashes (-)
-       # with the wildcard and matches both "x86_64" and "x86-64".
-       grep -i "$(uname -m | sed -e 's/_/\./g' -e 's/-/\./g')" ./config/manifest | grep -ve "^#" | awk '{print $1,$2,$3,$4,$5}' | while IFS=" " read -r checksum filename filetype version extra
+       # Use `uname -m | sed -e 's/_.*$//'` to get the base architechture of x86 or arm64.
+       # x86 files mix upper/lowercase x and may not append "64". A case-insensitive match on x86 or arm64 should be enough.
+       grep -i "$(uname -m | sed -e 's/_.*$//')" ./config/manifest | grep -ve "^#" | awk '{print $1,$2,$3,$4,$5}' | while IFS=" " read -r checksum filename filetype version extra
           do
                if [ "$filetype" == "database" ] && [ "$version" == "$ORACLE_BASE_VERSION" ] && [ -f ./database/"$filename" ] && [ -z "$edition" ]
              then case $1 in
