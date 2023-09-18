@@ -121,21 +121,15 @@ getPreinstall() {
   esac
 
   # Set the EPEL release:
-  release=$(grep -e "^PLATFORM_ID" /etc/os-release | sed -e 's/^.*://g' -e 's/"//g')
+  release=$(grep -e "^VERSION=" /etc/os-release | sed -e 's/^.*=\"//g' -e 's/\..*$//g')
+#  release=$(grep -e "^PLATFORM_ID" /etc/os-release | sed -e 's/^.*://g' -e 's/"//g')
 
-  export RPM_LIST="file hostname openssl oracle-epel-release-$release $pre $RPM_LIST" 
+  export RPM_LIST="file hostname openssl oracle-epel-release-el${release} ${pre} ${RPM_LIST}" 
 }
 
 getYum() {
   # Get the correct package installer: yum, dnf, or microdnf:
   YUM=$(command -v yum || command -v dnf || command -v microdnf)
-}
-
-getArch () {
-  case "$(uname -m)" in
-       arm64) arch="arm64" ;;   # Match ARM64
-       *)     arch="x86|x64" ;; # Regexp match for x86 and x64 because non-ARM files are identified by both x86 and x64 :(
-  esac
 }
 
 configENV() {
@@ -198,7 +192,7 @@ checkSum() {
   # $1 is the file name
   # $2 is the md5sum
     if [ -n "SKIP_MD5SUM" ]
-  then logger x "Skipping checksums"
+  then echo 0
   elif [ -z "$FILE_MD5SUM" ] && [ "$(type md5sum 2>/dev/null)" ] && [ ! "$(md5sum "$1" | awk '{print $1}')" == "$2" ]
   then error "Checksum for $1 did not match"
   fi
@@ -292,6 +286,22 @@ downloadPatch() {
   done
 }
 
+process_manifest() {
+  case "$(uname -m)" in
+       arm64) arch="grep ARM64"    ;;
+       *)     arch="grep -v ARM64" ;;
+  esac
+  
+  case $1 in
+       database ) grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\b${1}\b[[:blank:]]*${2}[[:blank:]].*${3}" "$manifest" | eval "$arch"
+                  ;;
+       *        ) grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\b${1}\b[[:blank:]]*\(${2}[[:blank:]]\|${3}[[:blank:]]\)" "$manifest" | eval "$arch"
+                  ;;
+  esac
+#  grep -e '^[[:alnum:]].*\b.*\.zip[[:blank:]]*\bdatabase*\b[[:blank:]]*19[[:blank:]]' config/manifest
+# grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\bdatabase\b.*${ORACLE_EDITION::2}" "$manifest"
+}
+
 installPatch() {
   # $1 is the patch type (patch, opatch)
   # $2 is the version
@@ -302,17 +312,16 @@ installPatch() {
          if [ -f "$manifest" ]
        then manifest="$(find "$INSTALL_DIR" -maxdepth 1 -name "manifest*" 2>/dev/null)"
             # Allow manifest to hold version-specific (version = xx.yy) and generic patches (version = xx) and apply them in order.
-            grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\b${1}\b[[:blank:]]*\(${__major_version}[[:blank:]]\|${__minor_version}[[:blank:]]\)" "$manifest" \
-                 | grep -i -E "$(getArch)" \
-                 | awk '{print $5,$2,$1}' | while read patchid install_file checksum
+            while read patchid install_file checksum
                do
+
                   # If there's a credential file and either:
                   # ...the patch file isn't present
                   # ...or the FORCE_PATCH flag matches the patch type (all, opatch, patch) or the patch ID
                   # ...the checksum in the patch manifest doesn't match the file
                   local __checksum_result=$(checkSum "$INSTALL_DIR/patches/$install_file" "$checksum" 2>/dev/null)
                     
-                    if [[ -f "/home/oracle/.netrc" && ( ! -f "$INSTALL_DIR/patches/$install_file" || "$(echo "$FORCE_PATCH" | grep -ci -e "\b$1\b" -e "\b$patchid\b" -e "\ball\b")" -eq 1 ) || "$__checksum_result" -ne 0 ]]
+                    if [[ -f "/home/oracle/.netrc" && ( ! -f "$INSTALL_DIR/patches/$install_file" || "$(echo "$FORCE_PATCH" | grep -ci -e "\b$1\b" -e "\b$patchid\b" -e "\ball\b")" -eq 1 ) || "$__checksum_result" != "0" ]]
                   then downloadPatch "$patchid" "$INSTALL_DIR"/patches "$install_file"
                   fi
                     if [ -f "$INSTALL_DIR/patches/$install_file" ]
@@ -327,7 +336,7 @@ installPatch() {
                        esac
                   else error "Patch $patchid identified in manifest not found"
                   fi
-             done
+             done < <(process_manifest "$1" "$__major_version" "$__minor_version" | awk '{print $5,$2,$1}')
        else error "The manifest file was not found"
        fi
   else warn "The patch directory was not found" #error "The patch directory was not found"
@@ -448,23 +457,25 @@ installOracle() {
        case $ORACLE_VERSION in
             18.*|19.*|2*) __dest_dir="$ORACLE_HOME"
                           __install_dir="$ORACLE_HOME"
-                          __install_opt="-ignorePrereqFailure" ;;
+                          __install_opt="-ignorePrereqFailure"
+                          __db_version="${ORACLE_VERSION%%.*}" ;;
                        *) __dest_dir="$INSTALL_DIR"
                           __install_dir="$INSTALL_DIR/database"
-                          __install_opt="-ignoresysprereqs -ignoreprereq" ;;
+                          __install_opt="-ignoresysprereqs -ignoreprereq"
+                          __db_version="$ORACLE_VERSION" ;;
        esac
        # Some versions have multiple files that must be unzipped to the correct location prior to installation.
        # Loop over the manifest, retrieve the file and checksum values, unzip the installation files.
        set +e
-       grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\bdatabase\b.*${ORACLE_EDITION::2}" "$manifest" \
-            | grep -i -E "$(getArch)" \
-            | awk '{print $1,$2}' | while read checksum install_file
+       while read checksum install_file
           do checkSum "$INSTALL_DIR/$install_file" "$checksum"
              sudo su - oracle -c "unzip -oq -d $__dest_dir $INSTALL_DIR/$install_file" || error "The installation file (${install_file}) was not found."
-       done
+        done < <(process_manifest "database" "$__db_version" "${ORACLE_EDITION::2}" | awk '{print $1,$2}')
+# < <(grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\bdatabase\b.*${ORACLE_EDITION::2}" "$manifest" \
 
        # Run the installation
-       sudo su - oracle -c "$__install_dir/runInstaller -silent -force -waitforcompletion -responsefile $INSTALL_DIR/$INSTALL_RESPONSE $__install_opt"
+       set +e
+       sudo su - oracle -c "export CV_ASSUME_DISTID=${CV_ASSUME_DISTID}; $__install_dir/runInstaller -silent -force -waitforcompletion -responsefile $INSTALL_DIR/$INSTALL_RESPONSE $__install_opt"
        set -e
 
          if [ ! "$("$__oracle_home"/perl/bin/perl -v)" ]

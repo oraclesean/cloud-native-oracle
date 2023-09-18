@@ -33,7 +33,7 @@ bc427a4d8c31929da523cae7fd6e659c  p34006614_121020_Linux-x86-64.zip		patch		12.1
 # 19c
 1858bd0d281c60f4ddabd87b1c214a4f  LINUX.X64_193000_db_home.zip			database	19		SE,EE
 #1f86171d22137e31cc2086bf7af36e91  oracle-database-ee-19c-1.0-1.x86_64.rpm	database	19		SE,EE
-6c39043ad12e11bcdc505184631e11a2  LINUX.ARM64_1919000_db_home.zip        	database    	19	        SE,EE
+6c39043ad12e11bcdc505184631e11a2  LINUX.ARM64_1919000_db_home.zip        	database    	19	        SE,EE		ARM
 5a8aedbd343732b5f69967b1379b21b9  p6880880_190000_Linux-x86-64.zip		opatch		19		6880880
 2a06e8c7409b21de9be6d404d39febda  p30557433_190000_Linux-x86-64.zip		patch		19.6		30557433
 0e0831a46cc3f8312a761212505ba5d1  p30565805_196000DBRU_Linux-x86-64.zip		patch		19.6		30565805

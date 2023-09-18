@@ -13,7 +13,8 @@ ARG ORACLE_EDITION=###ORACLE_EDITION_ARG###
 ARG ORACLE_SID=###ORACLE_SID_ARG###
 ###ORACLE_PDB_ARG###
 ###PDB_COUNT_ARG###
-###ORACLE_READ_ONLY_HOME_ARG###
+###ORACLE_ROH_ARG###
+###DISTRO_ARG###
 
 # Pass --build-arg DEBUG="bash -x" to run scripts in debug mode.
 ARG DEBUG=
@@ -37,6 +38,7 @@ ENV ORACLE_BASE=$ORACLE_BASE \
     ###ORACLE_PDB_ENV###
     ###PDB_COUNT_ENV###
     ###ORACLE_ROH_ENV###
+    ###DISTRO_ENV###
     ATTACH_HOME=$ATTACH_HOME \
     DEBUG=$DEBUG \
     PATH=$ORACLE_HOME/bin:$ORACLE_HOME/OPatch/:/usr/sbin:$PATH \
@@ -72,7 +74,8 @@ ARG ORACLE_EDITION=###ORACLE_EDITION_ARG###
 ARG ORACLE_SID=###ORACLE_SID_ARG###
 ###ORACLE_PDB_ARG###
 ###PDB_COUNT_ARG###
-###ORACLE_READ_ONLY_HOME_ARG###
+###ORACLE_ROH_ARG###
+###DISTRO_ARG###
 
 # Pass --build-arg DEBUG="bash -x" to run scripts in debug mode.
 ARG DEBUG=
@@ -108,6 +111,7 @@ ENV ORACLE_BASE=$ORACLE_BASE \
     ###ORACLE_PDB_ENV###
     ###PDB_COUNT_ENV###
     ###ORACLE_ROH_ENV###
+    ###DISTRO_ENV###
     ATTACH_HOME=$ATTACH_HOME \
     DEBUG=$DEBUG \
     PATH=$ORACLE_HOME/bin:$ORACLE_HOME/OPatch/:/usr/sbin:$PATH \

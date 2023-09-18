@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Fix sed discrepancies on OSX:
+case $(sed --help 2>&1) in
+     *GNU* ) SED () { sed -i "$@"; }
+             ;;
+     *     ) SED () { sed -i '' "$@"; }
+             ;;
+esac
+
 logger() {
   local __format="$1"
   shift 1
@@ -56,8 +64,8 @@ replaceVars() {
   then local __val="$(eval echo "\$$(echo "$__var")")"
   else local __val="$3"
   fi
-#  sed -i '' -e "s|###${__var}###|"${__val}"|g" "$__file"
-  sed -i '' -e "s|###${__var}###|${__val}|g" "$__file"
+#  SED -e "s|###${__var}###|"${__val}"|g" "$__file"
+  SED -e "s|###${__var}###|${__val}|g" "$__file"
 }
 
 checkSum() {

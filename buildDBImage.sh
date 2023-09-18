@@ -15,7 +15,7 @@ getEdition() {
             export ORACLE_BASE_CONFIG_ENV="###"
             export ORACLE_BASE_HOME_ARG="###"
             export ORACLE_BASE_HOME_ENV="###"
-            export ORACLE_READ_ONLY_HOME_ARG="###"
+            export ORACLE_ROH_ARG="###"
             export ORACLE_ROH_ENV="###"
             # Perform conditional setup by version.
             case $ORACLE_VERSION in
@@ -34,6 +34,8 @@ getEdition() {
 getVersion() {
   # Set defaults
   DOCKER_RUN_LABEL="-e PDB_COUNT=<PDB COUNT> -e ORACLE_PDB=<PDB PREFIX> "
+  DISTRO_ARG="###"
+  DISTRO_ENV="###"
   INSTALL_RESPONSE_ARG="$ORACLE_VERSION"
   MIN_SPACE_GB_ARG=12
   ORACLE_SID_ARG="ORCLCDB"
@@ -44,7 +46,7 @@ getVersion() {
   ORACLE_BASE_HOME_ENV="ORACLE_BASE_HOME=\$ORACLE_BASE_HOME \\\\"
   ORACLE_PDB_ARG="ARG ORACLE_PDB="
   ORACLE_PDB_ENV="ORACLE_PDB=\$ORACLE_PDB \\\\"
-  ORACLE_READ_ONLY_HOME_ARG="ARG ROOH="
+  ORACLE_ROH_ARG="ARG ROOH="
   ORACLE_ROH_ENV="ROOH=\$ROOH \\\\"
   ORACLE_RPM_ARG=""
   PDB_COUNT_ARG="ARG PDB_COUNT=1"
@@ -63,7 +65,7 @@ getVersion() {
                 export ORACLE_BASE_HOME_ENV="###"
                 export ORACLE_PDB_ARG="###"
                 export ORACLE_PDB_ENV="###"
-                export ORACLE_READ_ONLY_HOME_ARG="###"
+                export ORACLE_ROH_ARG="###"
                 export ORACLE_SID_ARG=ORCL
                 export PDB_COUNT_ARG="###"
                 export PDB_COUNT_ENV="###"
@@ -75,17 +77,22 @@ getVersion() {
                 export ORACLE_BASE_CONFIG_ENV="###"
                 export ORACLE_BASE_HOME_ARG="###"
                 export ORACLE_BASE_HOME_ENV="###"
-                export ORACLE_READ_ONLY_HOME_ARG="###"
+                export ORACLE_ROH_ARG="###"
                 export PREINSTALL_TAG="$ORACLE_VERSION"
                 ;;
        18*)     export ORACLE_BASE_VERSION="$ORACLE_VERSION"
                 export PREINSTALL_TAG="${ORACLE_BASE_VERSION}c"
                 export ORACLE_HOME_ARG="${PREINSTALL_TAG}/dbhome_1"
                 ;;
-       19*|21*) export ORACLE_BASE_VERSION=${ORACLE_VERSION:0:2}
+       19*|2*)  export ORACLE_BASE_VERSION=${ORACLE_VERSION:0:2}
                 export INSTALL_RESPONSE_ARG="$ORACLE_BASE_VERSION"
                 export PREINSTALL_TAG="${ORACLE_BASE_VERSION}c" 
                 export ORACLE_HOME_ARG="${PREINSTALL_TAG}/dbhome_1"
+                case "${S_TAG}" in
+                      8*) DISTRO_ARG="ARG CV_ASSUME_DISTID=OEL8"
+                          DISTRO_ENV="CV_ASSUME_DISTID=\$CV_ASSUME_DISTID \\\\"
+                          ;;
+                esac
                 ;;
        *)       error "Invalid version ($ORACLE_VERSION) provided" ;;
   esac
@@ -158,17 +165,17 @@ processManifest() {
                if [ "$filetype" == "database" ] && [ "$version" == "$ORACLE_BASE_VERSION" ] && [ -f ./database/"$filename" ] && [ -z "$edition" ]
              then case $1 in
                   ignore) addException "$filename" database ;;
-                  label)  sed -i '' -e "s/^###SOFTWARE_LABEL###/&\nLABEL database.software.${version}=\"Edition=${extra}, Version=${version}, File=${filename}, md5sum=${checksum}\"\n/" "$dockerfile" ;;
+                  label)  SED -e "s/^###SOFTWARE_LABEL###/&\nLABEL database.software.${version}=\"Edition=${extra}, Version=${version}, File=${filename}, md5sum=${checksum}\"\n/" "$dockerfile" ;;
                   esac
              elif [ "$filetype" == "database" ] && [ "$version" == "$ORACLE_BASE_VERSION" ] && [ -f ./database/"$filename" ] && [[ $edition =~ $ORACLE_EDITION ]]
              then case $1 in
                   ignore) addException "$filename" database ;;
-                  label)  sed -i '' -e "s/^###SOFTWARE_LABEL###/&\nLABEL database.software.${version}=\"Edition=${extra}, Version=${version}, File=${filename}, md5sum=${checksum}\"\n/" "$dockerfile" ;;
+                  label)  SED -e "s/^###SOFTWARE_LABEL###/&\nLABEL database.software.${version}=\"Edition=${extra}, Version=${version}, File=${filename}, md5sum=${checksum}\"\n/" "$dockerfile" ;;
                   esac
              elif [ "$filetype" == "opatch" -o "$filetype" == "patch" ] && [ "$version" == "$ORACLE_BASE_VERSION" -o "$version" == "$ORACLE_VERSION" ] && [ -f ./database/patches/"$filename" ]
              then case $1 in
                   ignore) addException "$filename" patch ;;
-                  label)  sed -i '' -e "s/^###SOFTWARE_LABEL###/&\nLABEL database.patch.${extra}=\"Patch ID=${extra}, Version=${version}, File=${filename}, md5sum=${checksum}\"\n/" "$dockerfile" ;;
+                  label)  SED -e "s/^###SOFTWARE_LABEL###/&\nLABEL database.patch.${extra}=\"Patch ID=${extra}, Version=${version}, File=${filename}, md5sum=${checksum}\"\n/" "$dockerfile" ;;
                   esac
              fi
         done
@@ -177,6 +184,8 @@ processManifest() {
 
 processDockerfile() {
    for var in DB_REPO \
+              DISTRO_ARG \
+              DISTRO_ENV \
               DOCKER_RUN_LABEL \
               FROM_BASE \
               FROM_OEL_BASE \
@@ -193,7 +202,7 @@ processDockerfile() {
               ORACLE_HOME_ARG \
               ORACLE_PDB_ARG \
               ORACLE_PDB_ENV \
-              ORACLE_READ_ONLY_HOME_ARG \
+              ORACLE_ROH_ARG \
               ORACLE_ROH_ENV \
               ORACLE_RPM_ARG \
               ORACLE_SID_ARG \
@@ -212,7 +221,7 @@ processDockerfile() {
   processManifest label
 
   # Remove unset lines
-  sed -i '' -e '/###$/d' "$1"
+  SED -e '/###$/d' "$1"
 }
 
 removeDockerfile () {
