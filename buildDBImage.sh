@@ -80,14 +80,12 @@ getVersion() {
                 export ORACLE_ROH_ARG="###"
                 export PREINSTALL_TAG="$ORACLE_VERSION"
                 ;;
-       18*)     export ORACLE_BASE_VERSION="$ORACLE_VERSION"
+       18*)     export ORACLE_BASE_VERSION="${ORACLE_VERSION:0:2}"
                 export PREINSTALL_TAG="${ORACLE_BASE_VERSION}c"
-                export ORACLE_HOME_ARG="${PREINSTALL_TAG}/dbhome_1"
                 ;;
        19*|2*)  export ORACLE_BASE_VERSION=${ORACLE_VERSION:0:2}
                 export INSTALL_RESPONSE_ARG="$ORACLE_BASE_VERSION"
-                export PREINSTALL_TAG="${ORACLE_BASE_VERSION}c" 
-                export ORACLE_HOME_ARG="${PREINSTALL_TAG}/dbhome_1"
+                export PREINSTALL_TAG="${ORACLE_BASE_VERSION}c"
                 case "${S_TAG}" in
                       8*) DISTRO_ARG="ARG CV_ASSUME_DISTID=OEL8"
                           DISTRO_ENV="CV_ASSUME_DISTID=\$CV_ASSUME_DISTID \\\\"
@@ -158,7 +156,7 @@ processManifest() {
        # Get the correct architecture.
        case "$(uname -m)" in
             arm64) arch="arm64" ;;   # Match ARM64
-            *)     arch="x86|x64" ;; # Regexp match for x86 and x64 because non-ARM files are identified by both x86 and x64 :(
+            *)     arch="x86|x64|amd64" ;; # Regexp match for x86 and x64 because non-ARM files are identified by both x86 and x64 :(
        esac
        grep -i -E "$arch" ./config/manifest | grep -ve "^#" | awk '{print $1,$2,$3,$4,$5}' | while IFS=" " read -r checksum filename filetype version extra
           do
