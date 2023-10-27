@@ -1,0 +1,15 @@
+oracle.install.responseFileVersion=/oracle/install/rspfmt_dbinstall_response_schema_v23.0.0
+installOption=INSTALL_DB_SWONLY
+UNIX_GROUP_NAME=oinstall
+INVENTORY_LOCATION=###ORACLE_INV###
+ORACLE_HOME=###ORACLE_HOME###
+ORACLE_BASE=###ORACLE_BASE###
+installEdition=###ORACLE_EDITION###
+OSDBA=oinstall
+OSOPER=oinstall
+OSBACKUPDBA=oinstall
+OSDGDBA=oinstall
+OSKMDBA=oinstall
+OSRACDBA=oinstall
+SECURITY_UPDATES_VIA_MYORACLESUPPORT=false
+DECLINE_SECURITY_UPDATES=true

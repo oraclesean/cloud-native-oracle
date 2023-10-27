@@ -114,8 +114,8 @@ e7922edf762f751675e4d90a29627b52  p33928944_210000_Linux-x86-64.zip		patch		21		
 c42962f8e97b920286c2e07f256e57cd  p34006614_210000_Linux-x86-64.zip		patch		21		34006614        # RDBMS - DSTV38 UPDATE - TZDATA2022A
 #
 # 23c
-f3b8ed1a1e6cbb107eb906e0f2acf7ea  LINUX.X64_231000_db_home.zip			database	23.1		SE,EE
-25b8c91ad12b1529caaa397e8f27c8f2  LINUX.X64_233000_db_home.zip			database	23.3		SE,EE
+#f3b8ed1a1e6cbb107eb906e0f2acf7ea  LINUX.X64_231000_db_home.zip			database	23.1		SE,EE
+25b8c91ad12b1529caaa397e8f27c8f2  LINUX.X64_233000_db_home.zip			database	23		SE,EE
 524048a7d2deba826caccc1b7facf4da  p6880880_230000_Linux-x86-64.zip		opatch		23		6880880
 f33f60e41f7a8905f3074b15958de614  p35921148_230000_Linux-x86-64.zip		patch		23.3		35921148	# 23.3 OCT2023 SECURITY FIXES (Patch)
 #9a66f9ff5ccedf1a253820d2984a540b  p6880880_230000_Linux-x86-64.zip		opatch		23		6880880

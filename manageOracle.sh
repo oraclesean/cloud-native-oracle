@@ -115,8 +115,10 @@ getPreinstall() {
        18*)   pre="oracle-database-preinstall-18c" ;;
        19*)   pre="oracle-database-preinstall-19c" ;;
        21*)   pre="oracle-database-preinstall-21c" ;;
-       23*)   curl -L -o oracle-database-preinstall-23c-1.0-0.5.el8.x86_64.rpm https://yum.oracle.com/repo/OracleLinux/OL8/developer/x86_64/getPackage/oracle-database-preinstall-23c-1.0-0.5.el8.x86_64.rpm
-              dnf -y localinstall oracle-database-preinstall-23c-1.0-0.5.el8.x86_64.rpm ;;
+       23*)   pre="oracle-database-preinstall-23c-1.0-0.5.el8.x86_64.rpm"
+              curl -L -o "${pre}" https://yum.oracle.com/repo/OracleLinux/OL8/developer/x86_64/getPackage/"${pre}"
+              microdnf install -y dnf
+              dnf localinstall -y "${pre}" ;;
        *)     pre="oracle-database-preinstall-19c" ;;
   esac
 
@@ -129,7 +131,7 @@ getPreinstall() {
 
 getYum() {
   # Get the correct package installer: yum, dnf, or microdnf:
-  YUM=$(command -v yum || command -v dnf || command -v microdnf)
+  export YUM=$(command -v yum || command -v dnf || command -v microdnf)
 }
 
 configENV() {
