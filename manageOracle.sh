@@ -180,12 +180,12 @@ configDBENV() {
 
   local __target_home=${TARGET_HOME:-$ORACLE_HOME}
 
-  mkdir -p {"$ORACLE_INV","$ORACLE_HOME","$__target_home","$ORADATA"/{dbconfig,fast_recovery_area},"$ORACLE_BASE"/{admin,scripts/{setup,startup}}} || error "Failure creating directories."
+  mkdir -p {"$ORACLE_INV","$ORACLE_HOME","$__target_home","${DATA}"/dbconfig,"${RECO}"/fast_recovery_area,"$ORACLE_BASE"/{admin,scripts/{setup,startup}}} || error "Failure creating directories."
    case $ORACLE_VERSION in
         18.*|19.*|2*) if [ "${ROOH^^}" = "ENABLE" ]; then mkdir -p "$ORACLE_BASE"/{dbs,homes} || error "Failure creating directories."; fi
                       ;;
    esac
-  chown -R oracle:oinstall "$INSTALL_DIR" "$SCRIPTS_DIR" "$ORACLE_INV" "$ORACLE_BASE" "$ORADATA" "$__target_home" || error "Failure changing directory ownership."
+  chown -R oracle:oinstall "$INSTALL_DIR" "$SCRIPTS_DIR" "$ORACLE_INV" "$ORACLE_BASE" "${DATA}" "${RECO}" "$__target_home" || error "Failure changing directory ownership."
   ln -s "$ORACLE_BASE"/scripts /docker-entrypoint-initdb.d || error "Failure setting Docker entrypoint."
   echo oracle:oracle | chpasswd || error "Failure setting the oracle user password."
 }
@@ -382,7 +382,8 @@ installOracle() {
    for var in ORACLE_EDITION \
               ORACLE_INV \
               ORACLE_BASE \
-              ORADATA
+              DATA \
+              RECO
     do
        replaceVars "$INSTALL_DIR"/"$INSTALL_RESPONSE" "$var"
   done
@@ -620,7 +621,7 @@ startDB() {
 
 stopDB() {
   # Copy the oratab before shutdown to capture any changes:
-  local __dbconfig="$ORADATA"/dbconfig/"$ORACLE_SID"
+  local __dbconfig="${DATA}"/dbconfig/"$ORACLE_SID"
     if [ -f /etc/oratab ]
   then cp /etc/oratab "$__dbconfig"/ 2>/dev/null
   fi
@@ -631,8 +632,8 @@ stopDB() {
 runDBCA() {
   local __version=$(echo "$ORACLE_VERSION" | cut -d. -f1)
   # Default init parameters
-#  local INIT_PARAMS=${INIT_PARAMS:-db_create_file_dest=${ORADATA},db_create_online_log_dest_1=${ORADATA},db_recovery_file_dest=${ORADATA}/fast_recovery_area,audit_trail=none,audit_sys_operations=false}
-  local INIT_PARAMS=${INIT_PARAMS:-db_recovery_file_dest=${ORADATA}/fast_recovery_area,audit_trail=none,audit_sys_operations=false}
+  local INIT_PARAMS=${INIT_PARAMS:-db_create_file_dest=${DATA},db_create_online_log_dest_1=${RECO},db_recovery_file_dest=${RECO}/fast_recovery_area,audit_trail=none,audit_sys_operations=false,java_jit_enabled=false}
+#  local INIT_PARAMS=${INIT_PARAMS:-db_recovery_file_dest=${RECO}/fast_recovery_area,audit_trail=none,audit_sys_operations=false}
     if ! [[ $INIT_PARAMS =~ = ]]
   then error "Invalid value provided for INIT_PARAMS: $INIT_PARAMS"
   fi
@@ -657,7 +658,7 @@ runDBCA() {
        local __dbcaresponse="$ORACLE_BASE"/dbca."$ORACLE_SID".rsp
        local __pdb_count=${PDB_COUNT:-0}  
        # Detect custom DBCA response files:
-       cp "$INSTALL_DIR"/dbca.*.rsp "$__dbcaresponse" 2>/dev/null || cp "$ORADATA"/dbca."$ORACLE_SID".rsp "$__dbcaresponse" 2>/dev/null || cp "$ORADATA"/dbca.rsp "$__dbcaresponse" 2>/dev/null
+       cp "$INSTALL_DIR"/dbca.*.rsp "$__dbcaresponse" 2>/dev/null || cp "${DATA}"/dbca."$ORACLE_SID".rsp "$__dbcaresponse" 2>/dev/null || cp "${DATA}"/dbca.rsp "$__dbcaresponse" 2>/dev/null
 
        # Allow DB unique names:
          if [ -n "$DB_UNQNAME" ] && [ "$DB_UNQNAME" != "$ORACLE_SID" ]
@@ -752,7 +753,8 @@ createDatabase() {
                    ORACLE_CHARACTERSET \
                    ORACLE_NLS_CHARACTERSET \
                    CREATE_CONTAINER \
-                   ORADATA \
+                   DATA \
+                   RECO \
                    PDBS \
                    PDB_NAME \
                    PDB_ADMIN \
@@ -769,6 +771,12 @@ createDatabase() {
          if [ "$(nproc)" -gt 8 ]
        then sed -i -e 's|TOTALMEMORY = "2048"||g' "$RESPONSEFILE"
        fi
+
+       # Required to prevent ORA-200 during DBCA; the full path must exist:
+         if [ ! -z "${RECO}" ]
+       then mkdir -p "${RECO}/fast_recovery_area/${ORACLE_SID}" || error "Could not create the FRA directory for ${ORACLE_SID}"
+       fi
+
        "$ORACLE_HOME"/bin/dbca -silent -createDatabase -responseFile "$RESPONSEFILE" || cat "$dbcaLogDir"/"$DB_UNQNAME"/"$DB_UNQNAME".log || cat "$dbcaLogDir"/"$DB_UNQNAME".log || cat "$dbcaLogDir"/"$DB_UNQNAME"/"$PDB_NAME"/"$DB_UNQNAME".log
   else "$ORACLE_HOME"/bin/dbca -silent -createPluggableDatabase -pdbName "$PDB_NAME" -sourceDB "$ORACLE_SID" -createAsClone true -createPDBFrom DEFAULT -pdbAdminUserName "$PDB_ADMIN" -pdbAdminPassword "$ORACLE_PWD" || cat "$dbcaLogDir"/"$DB_UNQNAME"/"$DB_UNQNAME".log || cat "$dbcaLogDir"/"$DB_UNQNAME".log || cat "$dbcaLogDir"/"$DB_UNQNAME"/"$PDB_NAME"/"$DB_UNQNAME".log
   fi
@@ -781,27 +789,27 @@ createAudit() {
 }
 
 moveFiles() {
-    if [ ! -d "$ORADATA/dbconfig/$ORACLE_SID" ]
-  then mkdir -p "$ORADATA"/dbconfig/"$ORACLE_SID"
+    if [ ! -d "${DATA}/dbconfig/$ORACLE_SID" ]
+  then mkdir -p "${DATA}"/dbconfig/"$ORACLE_SID"
   fi
 
   # Begin upgrade additions
   # The ORACLE_HOME in the configuration directory oratab is the source of truth
   # for existing databases, particularly after an upgrade.
-    if [ -f "$ORADATA/dbconfig/$ORACLE_SID/oratab" ]
-  then ORACLE_HOME="$(egrep "^${ORACLE_SID}:" "$ORADATA/dbconfig/$ORACLE_SID/oratab" | egrep -v "^$|^#" | cut -d: -f2 | head -1)"; export ORACLE_HOME
+    if [ -f "${DATA}/dbconfig/$ORACLE_SID/oratab" ]
+  then ORACLE_HOME="$(egrep "^${ORACLE_SID}:" "${DATA}/dbconfig/$ORACLE_SID/oratab" | egrep -v "^$|^#" | cut -d: -f2 | head -1)"; export ORACLE_HOME
   fi
 
-    if [ -f "$ORADATA/dbconfig/$ORACLE_SID/spfile${ORACLE_SID}.ora" ]
-  then __version="$(strings "$ORADATA/dbconfig/$ORACLE_SID/spfile${ORACLE_SID}.ora" | grep -e "[*.c|c]ompatible" | grep -v "#" | sed -e "s/[A-Za-z '=.*]//g" | head -c 2)"
-  elif [ -f "$ORADATA/dbconfig/$ORACLE_SID/init${ORACLE_SID}.ora" ]
-  then __version="$(grep -e "[*.c|c]ompatible" "$ORADATA/dbconfig/$ORACLE_SID/init${ORACLE_SID}.ora" | grep -v "#" | sed -e "s/[A-Za-z '=.*]//g" | head -c 2)"
+    if [ -f "${DATA}/dbconfig/$ORACLE_SID/spfile${ORACLE_SID}.ora" ]
+  then __version="$(strings "${DATA}/dbconfig/$ORACLE_SID/spfile${ORACLE_SID}.ora" | grep -e "[*.c|c]ompatible" | grep -v "#" | sed -e "s/[A-Za-z '=.*]//g" | head -c 2)"
+  elif [ -f "${DATA}/dbconfig/$ORACLE_SID/init${ORACLE_SID}.ora" ]
+  then __version="$(grep -e "[*.c|c]ompatible" "${DATA}/dbconfig/$ORACLE_SID/init${ORACLE_SID}.ora" | grep -v "#" | sed -e "s/[A-Za-z '=.*]//g" | head -c 2)"
   fi
   # End upgrade additions
 
   setBase
 
-  local __dbconfig="$ORADATA"/dbconfig/"$ORACLE_SID"
+  local __dbconfig="${DATA}"/dbconfig/"$ORACLE_SID"
 
    for filename in "$ORACLE_BASE_CONFIG"/init"$ORACLE_SID".ora \
                    "$ORACLE_BASE_CONFIG"/spfile"$ORACLE_SID".ora \
@@ -940,9 +948,12 @@ postInstallRoot() {
        local __grp=$(echo "$VOLUME_GROUP" | cut -d: -f2)
        groupadd -g "$__gid" "$__grp"
        usermod oracle -aG "$__grp"
-       chown -R :"$__grp" "$ORADATA"
-       chmod -R 775 "$ORADATA"
-       chmod -R g+s "$ORADATA"
+       chown -R :"$__grp" "${DATA}"
+       chown -R :"$__grp" "${RECO}"
+       chmod -R 775 "${DATA}"
+       chmod -R 775 "${RECO}"
+       chmod -R g+s "${DATA}"
+       chmod -R g+s "${RECO}"
   fi
 }
 
@@ -982,6 +993,8 @@ changePassword() {
 #----------------------------------------------------------#
 ORACLE_CHARACTERSET=${ORACLE_CHARACTERSET:-AL32UTF8}
 ORACLE_NLS_CHARACTERSET=${ORACLE_NLS_CHARACTERSET:-AL16UTF16}
+DATA="${DATA:-$ORADATA}"
+RECO="${RECO:-$ORADATA}"
 
 # If a parameter is passed to the script, run the associated action.
 while getopts ":ehOpPRU" opt; do
@@ -1068,8 +1081,8 @@ fi
 createAudit "$ORACLE_SID"
 
 # Check whether database already exists
-#      There's an oratab  and  The ORACLE_SID is in the oratab                    and  There's an ORADATA for the SID    OR There's an ORADATA for the SID
-  if [ -f "/etc/oratab" ] && [ "$(grep -Ec "^$ORACLE_SID\:" /etc/oratab)" -eq 1 ] && [ -d "$ORADATA"/"${ORACLE_SID^^}" ] || [ -d "$ORADATA"/"${ORACLE_SID}" ]
+#      There's an oratab  and  The ORACLE_SID is in the oratab                    and  There's an DATA for the SID    OR There's an DATA for the SID
+  if [ -f "/etc/oratab" ] && [ "$(grep -Ec "^$ORACLE_SID\:" /etc/oratab)" -eq 1 ] && [ -d "${DATA}"/"${ORACLE_SID^^}" ] || [ -d "${DATA}"/"${ORACLE_SID}" ]
 then # Before all else, move files. This puts the oratab from config into the expected location:
      moveFiles
      # Begin upgrade additions

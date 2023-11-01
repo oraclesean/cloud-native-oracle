@@ -16,4 +16,4 @@ nationalCharacterSet=###ORACLE_NLS_CHARACTERSET###
 initParams=###INIT_PARAMS###
 automaticMemoryManagement=FALSE
 totalMemory=2048
-datafileDestination=###ORADATA###
+datafileDestination=###DATA###

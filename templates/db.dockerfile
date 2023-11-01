@@ -8,7 +8,9 @@ ARG ORACLE_BASE=/u01/app/oracle
 ARG ORACLE_HOME=$ORACLE_BASE/product/###ORACLE_HOME_ARG###
 ###ORACLE_BASE_HOME_ARG###
 ###ORACLE_BASE_CONFIG_ARG###
-ARG ORADATA=/u01/app/oracle/oradata
+#ARG ORADATA=/u01/app/oracle/oradata
+ARG DATA=/u02/app/oracle/oradata
+ARG RECO=/u03/app/oracle
 ARG ORACLE_EDITION=###ORACLE_EDITION_ARG###
 ARG ORACLE_SID=###ORACLE_SID_ARG###
 ###ORACLE_PDB_ARG###
@@ -31,7 +33,8 @@ ENV ORACLE_BASE=$ORACLE_BASE \
     ORACLE_INV=$ORACLE_INV \
     ###ORACLE_BASE_HOME_ENV###
     ###ORACLE_BASE_CONFIG_ENV###
-    ORADATA=$ORADATA \
+    DATA=$DATA \
+    RECO=$RECO \
     ORACLE_VERSION=$ORACLE_VERSION \
     ORACLE_EDITION=$ORACLE_EDITION \
     ORACLE_SID=$ORACLE_SID \
@@ -69,7 +72,8 @@ ARG ORACLE_BASE=/u01/app/oracle
 ARG ORACLE_HOME=$ORACLE_BASE/product/###ORACLE_HOME_ARG###
 ###ORACLE_BASE_HOME_ARG###
 ###ORACLE_BASE_CONFIG_ARG###
-ARG ORADATA=/u01/app/oracle/oradata
+ARG DATA=/u02/app/oracle/oradata
+ARG RECO=/u03/app/oracle
 ARG ORACLE_EDITION=###ORACLE_EDITION_ARG###
 ARG ORACLE_SID=###ORACLE_SID_ARG###
 ###ORACLE_PDB_ARG###
@@ -93,7 +97,8 @@ LABEL maintainer="Sean Scott <sean.scott@viscosityna.com>"
 LABEL database.version="$ORACLE_VERSION"
 LABEL database.edition="$ORACLE_EDITION"
 ###SOFTWARE_LABEL###
-LABEL volume.data="$ORADATA"
+LABEL volume.data="$DATA"
+LABEL volume.reco="$RECO"
 LABEL volume.diagnostic_dest="$ORACLE_BASE/diag"
 LABEL port.listener.listener1="1521"
 LABEL port.oemexpress="5500"
@@ -104,7 +109,8 @@ ENV ORACLE_BASE=$ORACLE_BASE \
     ORACLE_HOME=$ORACLE_HOME \
     ###ORACLE_BASE_HOME_ENV###
     ###ORACLE_BASE_CONFIG_ENV###
-    ORADATA=$ORADATA \
+    DATA=$DATA \
+    RECO=$RECO \
     ORACLE_VERSION=$ORACLE_VERSION \
     ORACLE_EDITION=$ORACLE_EDITION \
     ORACLE_SID=$ORACLE_SID \
@@ -125,7 +131,6 @@ COPY --chown=oracle:oinstall ./config/*.tmpl        $INSTALL_DIR/
 COPY --chown=oracle:oinstall $MANAGE_ORACLE         $SCRIPTS_DIR/
 COPY --chown=oracle:oinstall --from=db $ORACLE_INV  $ORACLE_INV
 COPY --chown=oracle:oinstall --from=db $ORACLE_BASE $ORACLE_BASE
-COPY --chown=oracle:oinstall --from=db $ORADATA     $ORADATA
 
 USER root
 RUN $DEBUG $SCRIPTS_DIR/$MANAGE_ORACLE -R
@@ -133,7 +138,8 @@ RUN $DEBUG $SCRIPTS_DIR/$MANAGE_ORACLE -R
 USER oracle
 WORKDIR /home/oracle
 
-VOLUME ["$ORADATA"]
+VOLUME ["$DATA"]
+VOLUME ["$RECO"]
 VOLUME [ "$ORACLE_BASE/diag" ]
 ###SYSTEMD_VOLUME###
 EXPOSE 1521 5500 8080
