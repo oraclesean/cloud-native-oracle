@@ -573,17 +573,17 @@ echo "End of binary installation"
 }
 
 runsql() {
-  unset spool
     if [ -n "$2" ]
   then spool="spool $2 append"
+  else spool=""
   fi
 
   export NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'
   "$ORACLE_HOME"/bin/sqlplus -S / as sysdba << EOF
 set head off termout on verify off lines 300 pages 9999 trimspool on feed off serverout on
 whenever sqlerror exit warning
-"$spool"
-$1
+${spool}
+${1}
 EOF
 
     if [ "$?" -ne 0 ]
@@ -823,7 +823,7 @@ moveFiles() {
        then mv "$filename" "$__dbconfig"/ 2>/dev/null
        fi
          if [ -f "$__dbconfig/$file" ] && [ ! -L "$filename" ]
-       then ln -s "$__dbconfig"/"$file" "$filename" 2>/dev/null
+       then ln -sf "$__dbconfig"/"$file" "$filename" 2>/dev/null
        fi
   done
 
@@ -849,7 +849,7 @@ moveFiles() {
             fi
               if [ ! -L "$location" ]
             then # Link files from the dbconfig directory to the location
-                 ln -s "$dirname" "$location" 2>/dev/null
+                 ln -sf "$dirname" "$location" 2>/dev/null
             fi
        done
   fi
@@ -1100,9 +1100,9 @@ then # Before all else, move files. This puts the oratab from config into the ex
      # Preserve the default ORACLE_SID used to call the container:
      DEFAULT_SID=$ORACLE_SID
      # Find other SID:
-      for __sid in "$(grep "$__oracle_home" /etc/oratab | grep -v "^#" | grep -Ev "^$DEFAULT_SID\:" | cut -d: -f1)"
+      for __sid in "$(grep "$__oracle_home" /etc/oratab | grep -Ev "^#|^$" | grep -Ev "^$DEFAULT_SID\:" | cut -d: -f1)"
        do
-            if [ -z "$__sid" ]
+            if [ -n "$__sid" ]
           then . "$__oraenv" <<< "$__sid"
                createAudit "$__sid"
                moveFiles
