@@ -190,6 +190,21 @@ configDBENV() {
   echo oracle:oracle | chpasswd || error "Failure setting the oracle user password."
 }
 
+configUserENV() {
+  # Create login.sql:
+    if [ -n "$ORACLE_PATH" ] && [ ! -f "$ORACLE_PATH/login.sql" ]
+  then copyTemplate "$INSTALL_DIR"/login.sql.tmpl "$ORACLE_PATH"/login.sql replace
+  fi
+  # Create the user profile:
+    if [ "$(grep -c "Set Oracle environment" "$HOME"/.bashrc)" -eq 0 ]
+  then copyTemplate "$INSTALL_DIR"/env.tmpl "$HOME"/.bashrc append
+  fi
+  # Add rlwrap:
+    if [ "$(rlwrap -v)" ]
+  then copyTemplate "$INSTALL_DIR"/rlwrap.tmpl "$HOME"/.bashrc append
+  fi > /dev/null 2>&1
+}
+
 checkSum() {
   # $1 is the file name
   # $2 is the md5sum
@@ -1079,6 +1094,8 @@ fi
 
 # Check the audit path
 createAudit "$ORACLE_SID"
+# Configure the user environment:
+configUserENV
 
 # Check whether database already exists
 #      There's an oratab  and  The ORACLE_SID is in the oratab                    and  There's an DATA for the SID    OR There's an DATA for the SID
@@ -1128,18 +1145,6 @@ else # Create the TNS configuration
        if [ -z "$ORACLE_PWD" ]
      then ORACLE_PWD="$(mkPass)"; export ORACLE_PWD
           logger BA "Oracle password for SYS, SYSTEM and PDBADMIN: $ORACLE_PWD"
-     fi
-
-     # Create the user profile
-     copyTemplate "$INSTALL_DIR"/env.tmpl "$HOME"/.bashrc append
-
-       if [ "$(rlwrap -v)" ]
-     then copyTemplate "$INSTALL_DIR"/rlwrap.tmpl "$HOME"/.bashrc append
-     fi > /dev/null 2>&1
-
-     # Create login.sql
-       if [ -n "$ORACLE_PATH" ]
-     then copyTemplate "$INSTALL_DIR"/login.sql.tmpl "$ORACLE_PATH"/login.sql replace
      fi
 
      # Run DBCA
