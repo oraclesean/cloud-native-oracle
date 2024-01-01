@@ -256,7 +256,7 @@ mkdir -p $ORADATA/scripts
 ## Create the audit, data, and diagnostic directories
 This creates separate subdirectories for each file type and bind mounts them to Docker volumes. Assigning them to Docker volumes means they're visible in the Docker Desktop tool, as well as through the CLI via `docker volume ls` and other commands.
 ```
- for dir in audit data diag
+ for dir in audit data diag reco
   do mkdir -p $ORADATA/${CONTAINER_NAME}/${dir}
      rm -fr $ORADATA/${CONTAINER_NAME}/${dir}/*
      docker volume rm ${CONTAINER_NAME}_${dir} 2>/dev/null
@@ -283,16 +283,17 @@ In the following command, I'm creating a container named `$CONTAINER_NAME`, then
 ```
 docker run -d \
        --name ${CONTAINER_NAME} \
-       --volume ${CONTAINER_NAME}_data:/opt/oracle/oradata \
+       --volume ${CONTAINER_NAME}_data:/u02/app/oracle/oradata \
        --volume ${CONTAINER_NAME}_diag:/u01/app/oracle/diag \
        --volume ${CONTAINER_NAME}_audit:/u01/app/oracle/admin \
+       --volume ${CONTAINER_NAME}_reco:/u03/app/oracle \
        --volume $ORADATA/scripts:/scripts \
        --network oracle-db \
        -e ORACLE_SID=${CONTAINER_NAME} \
        -e ORACLE_PDB=${CONTAINER_NAME}PDB1 \
        -p 8080:8080 \
        -p 51521:1521 \
-       oraclesean/db:19.19-EE
+       oracle/db:19.19-EE
 ```
 
 Add or remove options as you see fit.
