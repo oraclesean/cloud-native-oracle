@@ -305,8 +305,8 @@ downloadPatch() {
 
 process_manifest() {
   case "$(uname -m)" in
-       arm64) arch="grep ARM64"    ;;
-       *)     arch="grep -v ARM64" ;;
+       arm64|aarch64) arch="grep ARM64"    ;;
+       *)             arch="grep -v ARM64" ;;
   esac
   
   case $1 in

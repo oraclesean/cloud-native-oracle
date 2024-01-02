@@ -155,8 +155,8 @@ processManifest() {
   then
        # Get the correct architecture.
        case "$(uname -m)" in
-            arm64) arch="arm64" ;;   # Match ARM64
-            *)     arch="x86|x64|amd64" ;; # Regexp match for x86 and x64 because non-ARM files are identified by both x86 and x64 :(
+            arm64|aarch64) arch="arm64" ;;   # Match arm64 or aarch64 for ARM64 files
+            *)             arch="x86|x64|amd64" ;; # Regexp match for x86 and x64 because non-ARM files are identified by both x86 and x64 :(
        esac
        grep -i -E "$arch" ./config/manifest | grep -ve "^#" | awk '{print $1,$2,$3,$4,$5}' | while IFS=" " read -r checksum filename filetype version extra
           do
