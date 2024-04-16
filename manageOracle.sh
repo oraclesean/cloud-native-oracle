@@ -273,7 +273,8 @@ downloadPatch() {
   then error "The MOS credential file doesn't exist"
   fi
   # Install curl if it is not present.
-  command -v curl >/dev/null 2>&1 || getYum; $YUM install -y curl
+  getYum
+  command -v curl >/dev/null 2>&1 || $YUM install -y curl
 
   # Log in to MOS if there isn't already a cookie file.
     if [ ! -f "$__cookie" ]
