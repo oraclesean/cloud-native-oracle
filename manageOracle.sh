@@ -346,8 +346,12 @@ installPatch() {
                        opatch) sudo su - oracle -c "unzip -oq -d $ORACLE_HOME $INSTALL_DIR/patches/$install_file" || error "An incorrect version of OPatch was found (version, architecture or bit mismatch)" ;;
                        patch)  sudo su - oracle -c "unzip -oq -d $INSTALL_DIR $INSTALL_DIR/patches/$install_file" || error "There was a problem unzipping $install_file"
                                # Get the apply command from the README
-                               opatch_apply=$(grep -E "opatch .apply.*" "$INSTALL_DIR"/"$patchid"/README.* | sort | head -1 | awk '{print $2}')
-                               opatch_apply=${opatch_apply:-apply}
+                               # Some README wrap the sample command in <div>. Counting occurrences of a bounded napply in the README seems the best solution.
+                                 if [ "$(k=0; for j in $(grep -chE "\bnapply\b" "$INSTALL_DIR"/"$patchid"/README.*); do k=$(($j+$k)); done; echo $k)" -gt 0 ]
+                               then opatch_apply="napply"
+                               else opatch_apply=$(grep -E "opatch .apply.*" "$INSTALL_DIR"/"$patchid"/README.* | sort | head -1 | awk '{print $2}')
+                               fi
+                               opatch_apply="${opatch_apply:-apply}"
                                sudo su - oracle -c "$ORACLE_HOME/OPatch/opatch $opatch_apply -silent $INSTALL_DIR/$patchid" || error "OPatch $opatch_apply for $patchid failed"
                                ;;
                        esac
