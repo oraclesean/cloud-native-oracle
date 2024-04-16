@@ -276,7 +276,7 @@ then # The system must be using GNU-getopt to process command line parameters. T
      error "An incompatible version of getopt is installed. Cannot process parameters."
 elif [ -n "$*" ] # Only process command line parameters if options were passed.
 then OPTS=de:hkn:qeS:t:T:v:
-     OPTL=build-arg:,debug,dockerfile-keep,edition:,force-patch,force-rebuild,force-rm,help,image-name:,no-cache,no-sum,progress:,prune-cache,quiet,read-only-home,remove-components:,rpm:,secret:,source-image:,source-tag:,tag:,version:
+     OPTL=build-arg:,debug,dockerfile-keep,edition:,force-patch:,force-rebuild,force-rm,help,image-name:,no-cache,no-sum,progress:,prune-cache,quiet,read-only-home,remove-components:,rpm:,secret:,source-image:,source-tag:,tag:,version:
      ARGS=$(getopt -a -o $OPTS -l $OPTL -- "$@") || usage 1
      eval set -- "$ARGS"
      while :
