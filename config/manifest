@@ -88,6 +88,10 @@ c4a5f60d3fc3fa5552468648c8eec0be  p35320081_190000_Linux-x86-64.zip		patch		19.2
 #64a883bb4e515741d7c183151eec9e52  p35742413_190000_Linux-x86-64.zip		patch		19.21		35742413	# DBRU+OJVM
 70ae8bfa23c0e5b9b4b65e977ab57f55  p35943157_190000_Linux-x86-64.zip		patch		19.22		35943157	# DBRU
 96d87c4fc52c631283c9e97ef8ccaed4  p36356978_1922000DBRU_Linux-x86-64.zip	patch		19.22		36356978	# DBMRP 19.22.0.0.240319
+59bd01e1f904ac9586d74bb0fd44b9ff  p36233263_190000_Linux-x86-64.zip             patch           19.23           36233263        # DBRU
+#8ea864606aa290c788da012172dc7d0f  p36209492_190000_Linux-x86-64.zip            patch           19.23           36209492        # DBRU+OJVM
+#fdeb6175d3b851664d68142e069e65a2  p36233126_190000_Linux-x86-64.zip            patch           19.23           36233126        # GI
+#09333b5e9ab6ad25ad7ad74446c8b821  p36209493_190000_Linux-x86-64.zip            patch           19.23           36209493        # GI+OJVM
 # DATABASE PERL UPDATE IN 19C TO V5.32-1 (CVE-2022-23990 - LIBEXPAT UPDATE)
 # General for any version, must be applied after RU
 60dbd6f92635fb98790a9d69e80d5dcf  p33912872_190000_Linux-x86-64.zip		patch		19		33912872
@@ -110,6 +114,8 @@ e8e5e81faafb730de225f111ede677f8  p33843745_210000_Linux-x86-64.zip		patch		21.6
 559fa35decaed605cfac05e33fbc3ffd  p35428978_210000_Linux-x86-64.zip		patch		21.11		35428978	# DBRU
 #ebcfb0073611995d3963636f2b12d069  p35738010_210000_Linux-x86-64.zip		patch		21.12		35738010	# GI
 6d36e2f7795c0c01dd7076cb85e71671  p35740258_210000_Linux-x86-64.zip		patch		21.12		35740258	# DBRU
+90a375bee9c6d184e6bc1fe56d2bcccb  p36352352_210000_Linux-x86-64.zip             patch           21.14           36352352        # DBRU
+#64cf83e08eb897fba92de1995e4ceb46  p36352207_210000_Linux-x86-64.zip            patch           21.14           36352207        # GI
 # DATABASE PERL UPDATE FOR 21C TO V5.32-1 (CVE-2022-23990 - LIBEXPAT UPDATE)
 # General for any version, must be applied after RU
 e7922edf762f751675e4d90a29627b52  p33928944_210000_Linux-x86-64.zip		patch		21		33928944
