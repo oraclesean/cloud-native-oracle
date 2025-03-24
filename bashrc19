@@ -23,3 +23,6 @@ export ORACLE_19C_HOME=$ORACLE_BASE/product/19c/dbhome_1
 alias sqlplus="rlwrap \$ORACLE_HOME/bin/sqlplus"
 alias rman="rlwrap \$ORACLE_HOME/bin/rman"
 alias dgmgrl="rlwrap \$ORACLE_HOME/bin/dgmgrl"
+
+# Fix for directory expansion
+shopt -s direxpand 2>/dev/null || true
