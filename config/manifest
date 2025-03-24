@@ -34,8 +34,8 @@ bc427a4d8c31929da523cae7fd6e659c  p34006614_121020_Linux-x86-64.zip		patch		12.1
 1858bd0d281c60f4ddabd87b1c214a4f  LINUX.X64_193000_db_home.zip			database	19		SE,EE
 #1f86171d22137e31cc2086bf7af36e91  oracle-database-ee-19c-1.0-1.x86_64.rpm	database	19		SE,EE
 6c39043ad12e11bcdc505184631e11a2  LINUX.ARM64_1919000_db_home.zip        	database    	19	        SE,EE		ARM
-901f2781420fcf97ac74773e17b8665b  p6880880_190000_Linux-x86-64.zip		opatch		19		6880880
-29118578e285c20d7799d803adbe12d5  p6880880_190000_Linux-ARM-64.zip		opatch		19		6880880		ARM
+8d3cf4926a69cef54dbd3d4327aa90af  p6880880_190000_Linux-x86-64.zip		opatch		19		6880880
+#29118578e285c20d7799d803adbe12d5  p6880880_190000_Linux-ARM-64.zip		opatch		19		6880880		ARM
 2a06e8c7409b21de9be6d404d39febda  p30557433_190000_Linux-x86-64.zip		patch		19.6		30557433
 0e0831a46cc3f8312a761212505ba5d1  p30565805_196000DBRU_Linux-x86-64.zip		patch		19.6		30565805
 f949a2bc8c5b1e01fd24ebee8c7feebe  p30869156_190000_Linux-x86-64.zip		patch		19.7		30869156
@@ -93,6 +93,8 @@ c4a5f60d3fc3fa5552468648c8eec0be  p35320081_190000_Linux-x86-64.zip		patch		19.2
 #8ea864606aa290c788da012172dc7d0f  p36209492_190000_Linux-x86-64.zip            patch           19.23           36209492        # DBRU+OJVM
 #fdeb6175d3b851664d68142e069e65a2  p36233126_190000_Linux-x86-64.zip            patch           19.23           36233126        # GI
 #09333b5e9ab6ad25ad7ad74446c8b821  p36209493_190000_Linux-x86-64.zip            patch           19.23           36209493        # GI+OJVM
+1851472b1a587c4b2dc501fed5ce04a1  p36582781_190000_Linux-x86-64.zip		patch		19.24		36582781
+5fc16e540ff5fe6343e736f710e2de6b  p36912597_190000_Linux-x86-64.zip		patch		19.25		36912597
 # DATABASE PERL UPDATE IN 19C TO V5.32-1 (CVE-2022-23990 - LIBEXPAT UPDATE)
 # General for any version, must be applied after RU
 60dbd6f92635fb98790a9d69e80d5dcf  p33912872_190000_Linux-x86-64.zip		patch		19		33912872
@@ -122,9 +124,11 @@ e8e5e81faafb730de225f111ede677f8  p33843745_210000_Linux-x86-64.zip		patch		21.6
 e7922edf762f751675e4d90a29627b52  p33928944_210000_Linux-x86-64.zip		patch		21		33928944
 c42962f8e97b920286c2e07f256e57cd  p34006614_210000_Linux-x86-64.zip		patch		21		34006614        # RDBMS - DSTV38 UPDATE - TZDATA2022A
 #
-# 23c
+# 23ai
 #f3b8ed1a1e6cbb107eb906e0f2acf7ea  LINUX.X64_231000_db_home.zip			database	23.1		SE,EE
-94fd4db83ddbc75c670b76cc6c3156d9  LINUX.X64_233000_db_home.zip			database	23		SE,EE
-524048a7d2deba826caccc1b7facf4da  p6880880_230000_Linux-x86-64.zip		opatch		23		6880880
-f33f60e41f7a8905f3074b15958de614  p35921148_230000_Linux-x86-64.zip		patch		23.3		35921148	# 23.3 OCT2023 SECURITY FIXES (Patch)
-#9a66f9ff5ccedf1a253820d2984a540b  p6880880_230000_Linux-x86-64.zip		opatch		23		6880880
+#94fd4db83ddbc75c670b76cc6c3156d9  LINUX.X64_233000_db_home.zip			database	23		SE,EE
+594d372a21e558b1a5155fc3b111894a  LINUX.X64_235000_db_home.zip                  database        23              SE,EE
+acbe2c68448d1ba9f86ccd315ee9d22d  p6880880_230000_Linux-x86-64.zip		opatch		23		6880880
+#f33f60e41f7a8905f3074b15958de614  p35921148_230000_Linux-x86-64.zip		patch		23.3		35921148	# 23.3 OCT2023 SECURITY FIXES (Patch)
+0a50f1236143c0566ba684b90d44f46a  p36507037_230000_Linux-x86-64.zip		patch		23.3		36507037	# 23.3 APR2024 Security Fixes
+594d372a21e558b1a5155fc3b111894a  LINUX.X64_235000_db_home.zip			database	23		SE,EE
