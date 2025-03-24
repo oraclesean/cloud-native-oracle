@@ -256,7 +256,7 @@ usage () {
   echo "    -r, --force-rebuild             Force rebuild the base Linux image if it exists "
   echo "        --read-only-home            Configure a Read-Only Oracle Home "
   echo "        --remove-components string  Comma-delimited list of components to remove "
-  echo "                                    Options: DBMA,HELP,ORDS,OUI,PATCH,PILOT,SQLD,SUP,UCP,TCP,ZIP "
+  echo "                                    Options: DBMA,HELP,ORDS,OUI,PATCH,PILOT,SQLD,SUP,UCP,TCP,ZIP,INV,DBCA,ADMIN,ROH "
   echo "                                    Default is all of the above "
   echo "        --rpm stringArray           Comma-delimited list of binaries/libraries to install "
   echo "                                        Default: bash-completion,git,less,strace,tree,vi,which "
@@ -275,7 +275,7 @@ usage () {
 then # The system must be using GNU-getopt to process command line parameters. This is not the default on MacOS.
      error "An incompatible version of getopt is installed. Cannot process parameters."
 elif [ -n "$*" ] # Only process command line parameters if options were passed.
-then OPTS=de:hkn:qeS:t:T:v:
+then OPTS=de:hkn:qrS:T:t:v:
      OPTL=build-arg:,debug,dockerfile-keep,edition:,force-patch:,force-rebuild,force-rm,help,image-name:,no-cache,no-sum,progress:,prune-cache,quiet,read-only-home,remove-components:,rpm:,secret:,source-image:,source-tag:,tag:,version:
      ARGS=$(getopt -a -o $OPTS -l $OPTL -- "$@") || usage 1
      eval set -- "$ARGS"
