@@ -50,7 +50,7 @@ To build a database image, run `buildDBImage.sh` and pass optional values:
     -r, --force-rebuild             Force rebuild the base Linux image if it exists
         --read-only-home            Configure a Read-Only Oracle Home
         --remove-components string  Comma-delimited list of components to remove
-                                    Options: DBMA,HELP,ORDS,OUI,PATCH,PILOT,SQLD,SUP,UCP,TCP,ZIP
+                                    Options: DBMA,HELP,ORDS,OUI,PATCH,PILOT,SQLD,SUP,UCP,TCP,ZIP,INV,DBCA,ADMIN,ROH
                                     Default is all of the above
         --rpm stringArray           Comma-delimited list of binaries/libraries to install
                                         Default: bash-completion,git,less,strace,tree,vi,which
