@@ -115,8 +115,8 @@ getPreinstall() {
        18*)   pre="oracle-database-preinstall-18c" ;;
        19*)   pre="oracle-database-preinstall-19c" ;;
        21*)   pre="oracle-database-preinstall-21c" ;;
-       23*)   pre="oracle-database-preinstall-23c-1.0-0.5.el8.x86_64.rpm"
-              curl -L -o "${pre}" https://yum.oracle.com/repo/OracleLinux/OL8/developer/x86_64/getPackage/"${pre}"
+       23*)   pre="oracle-database-preinstall-23ai-1.0-2.el8.x86_64.rpm"
+              curl -L -o "${pre}" https://yum.oracle.com/repo/OracleLinux/OL8/appstream/x86_64/getPackage/"${pre}"
               microdnf install -y dnf
               dnf localinstall -y "${pre}" ;;
        *)     pre="oracle-database-preinstall-19c" ;;
@@ -316,8 +316,6 @@ process_manifest() {
        *        ) grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\b${1}\b[[:blank:]]*\(${2}[[:blank:]]\|${3}[[:blank:]]\)" "$manifest" | eval "$arch"
                   ;;
   esac
-#  grep -e '^[[:alnum:]].*\b.*\.zip[[:blank:]]*\bdatabase*\b[[:blank:]]*19[[:blank:]]' config/manifest
-# grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\bdatabase\b.*${ORACLE_EDITION::2}" "$manifest"
 }
 
 installPatch() {
@@ -494,7 +492,6 @@ installOracle() {
           do checkSum "$INSTALL_DIR/$install_file" "$checksum"
              sudo su - oracle -c "unzip -oq -d $__dest_dir $INSTALL_DIR/$install_file" || error "The installation file (${install_file}) was not found."
         done < <(process_manifest "database" "$__db_version" "${ORACLE_EDITION::2}" | awk '{print $1,$2}')
-# < <(grep -e "^[[:alnum:]].*\b.*\.zip[[:blank:]]*\bdatabase\b.*${ORACLE_EDITION::2}" "$manifest" \
 
        # Run the installation
        set +e
@@ -534,13 +531,22 @@ echo "End of binary installation"
   fi # End of software binary installation
 
   # Check for OPatch
-#  installPatch opatch "${ORACLE_VERSION::2}"
   installPatch opatch "${ORACLE_VERSION}"
   # Check for patches
   installPatch patch "${ORACLE_VERSION}"
   # Print a patch summary
     if [ -n "$DEBUG" ]
   then getPatches
+  fi
+
+  # Remove oraInventory logs
+    if [ -d "$ORACLE_INV/logs" ]
+  then rm -fr "$ORACLE_INV"/logs/* 2>/dev/null
+  fi
+
+  # Remove DBCA logs
+    if [ -d "$ORACLE_BASE/cfgtoollogs" ]
+  then rm -fr "$ORACLE_BASE"/cfgtoollogs/*/* 2>/dev/null
   fi
 
   # Minimize the installation
@@ -578,6 +584,15 @@ echo "End of binary installation"
                         rm -fr "$__oracle_home"/ucp 2>/dev/null ;;
                  ZIP)   # Installation files
                         rm -fr "$__oracle_home"/lib/*.zip 2>/dev/null ;;
+                 INV)   # oraInventory logs
+                        rm -fr "$ORACLE_INV"/logs/* 2>/dev/null ;;
+                 DBCA)  # DBCA logs
+                        rm -fr "$ORACLE_BASE"/cfgtoollogs/*/* 2>/dev/null ;;
+                 ADMIN) # ORACLE_BASE/admin
+                        rm -fr "$ORACLE_BASE"/admin/*/*/* 2>/dev/null ;;
+                 ROH)   # Read-only home files
+                        rm -fr "$ORACLE_BASE"/homes/*/log/*/*/* 2>/dev/null
+                        rm -fr "$ORACLE_BASE"/homes/*/rdbms/log/* 2>/dev/null ;;
             esac
        done
        IFS=$OLDIFS
@@ -599,6 +614,8 @@ runsql() {
   fi
 
   export NLS_DATE_FORMAT='YYYY-MM-DD HH24:MI:SS'
+  unset ORACLE_PATH
+  unset SQLPATH
   "$ORACLE_HOME"/bin/sqlplus -S / as sysdba << EOF
 set head off termout on verify off lines 300 pages 9999 trimspool on feed off serverout on
 whenever sqlerror exit warning
@@ -677,7 +694,7 @@ runDBCA() {
        IFS=$OLDIFS
        local __dbcaresponse="$ORACLE_BASE"/dbca."$ORACLE_SID".rsp
        local __pdb_count=${PDB_COUNT:-0}  
-       # Detect custom DBCA response files:
+       # Detect custom DBCA response files
        cp "$INSTALL_DIR"/dbca.*.rsp "$__dbcaresponse" 2>/dev/null || cp "${DATA}"/dbca."$ORACLE_SID".rsp "$__dbcaresponse" 2>/dev/null || cp "${DATA}"/dbca.rsp "$__dbcaresponse" 2>/dev/null
 
        # Allow DB unique names:
@@ -749,6 +766,11 @@ runDBCA() {
             createDatabase "$__dbcaresponse" "$INIT_PARAMS" FALSE
             printf "\nunset ORACLE_PDB\n" >> "$HOME"/.bashrc
        fi
+
+  # Insert a line in the oratab file if the database wasn't added.
+    if [ "$(grep -c -e "^${ORACLE_SID}\b" /etc/oratab)" -eq 0 ]
+  then echo "${ORACLE_SID}:${ORACLE_HOME}:N" >> /etc/oratab
+  fi
 
   done
   IFS=$OLDIFS
@@ -908,7 +930,7 @@ HealthCheck() {
   then __tabname="v\$pdbs"
   fi
 
-  health=$("$ORACLE_HOME"/bin/sqlplus -S / as sysdba << EOF
+  health=$(unset ORACLE_PATH; unset SQLPATH; "$ORACLE_HOME"/bin/sqlplus -S / as sysdba << EOF
 set head off pages 0 trimspool on feed off serverout on
 whenever sqlerror exit warning
 --select count(*) from $__tabname where open_mode=$__open_mode;
