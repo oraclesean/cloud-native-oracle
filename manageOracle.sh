@@ -930,7 +930,7 @@ HealthCheck() {
   then __tabname="v\$pdbs"
   fi
 
-  health=$(unset ORACLE_PATH; unset SQLPATH; "$ORACLE_HOME"/bin/sqlplus -S / as sysdba << EOF
+  health=$(($(unset ORACLE_PATH; unset SQLPATH; "$ORACLE_HOME"/bin/sqlplus -S / as sysdba << EOF
 set head off pages 0 trimspool on feed off serverout on
 whenever sqlerror exit warning
 --select count(*) from $__tabname where open_mode=$__open_mode;
@@ -950,7 +950,7 @@ whenever sqlerror exit warning
     from v\$database;
 --    from $__tabname;
 EOF
-)
+)+0))
 
     if [ "$?" -ne 0 ]
   then return 2
@@ -1008,7 +1008,6 @@ runUserScripts() {
   elif [ -d "$SCRIPTS_ROOT" ] && [ -n "$(ls -A "$SCRIPTS_ROOT")" ]
   then # Check that directory exists and it contains files
        logger B "${FUNCNAME[0]}: Running user scripts"
-#        for f in "$SCRIPTS_ROOT"/*
        while IFS= read -r f
           do
              case "$f" in
@@ -1016,7 +1015,6 @@ runUserScripts() {
                   *.sql)    logger ba "${FUNCNAME[0]}: Script: $f"; echo "exit" | "$ORACLE_HOME"/bin/sqlplus -s "/ as sysdba" @"$f" ;;
                   *)        logger ba "${FUNCNAME[0]}: Ignored file $f" ;;
              esac
-#        done
         done < <(find "$SCRIPTS_ROOT"/*.{sql,sh} 2>/dev/null | sort)
 
        logger A "${FUNCNAME[0]}: User scripts complete"
